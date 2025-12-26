@@ -17,7 +17,6 @@ import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.UUID;
@@ -29,7 +28,6 @@ import java.util.UUID;
 public class ApiKeyServiceImpl implements ApiKeyService {
     
     private static final Logger log = LoggerFactory.getLogger(ApiKeyServiceImpl.class);
-    private static final SecureRandom random = new SecureRandom();
     
     @Value("${hyperswitch.api-key.prefix:snd_}")
     private String apiKeyPrefix;
@@ -122,6 +120,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
         log.info("Updating API key: {} for merchant: {}", keyId, merchantId);
         
         return apiKeyRepository.findByKeyIdAndMerchantId(keyId, merchantId)
+            .switchIfEmpty(Mono.error(new RuntimeException("API_KEY_NOT_FOUND")))
             .flatMap(entity -> {
                 if (request.getName() != null) {
                     entity.setName(request.getName());
@@ -137,10 +136,12 @@ public class ApiKeyServiceImpl implements ApiKeyService {
                     .map(this::toApiKeyResponse)
                     .map(Result::<ApiKeyResponse, PaymentError>ok);
             })
-            .switchIfEmpty(Mono.just(Result.<ApiKeyResponse, PaymentError>err(
-                PaymentError.of("API_KEY_NOT_FOUND", "API key not found: " + keyId))))
             .onErrorResume(error -> {
                 log.error("Error updating API key: {}", error.getMessage(), error);
+                if (error.getMessage() != null && error.getMessage().contains("API_KEY_NOT_FOUND")) {
+                    return Mono.just(Result.<ApiKeyResponse, PaymentError>err(
+                        PaymentError.of("API_KEY_NOT_FOUND", "API key not found: " + keyId)));
+                }
                 return Mono.just(Result.err(PaymentError.of("API_KEY_UPDATE_FAILED",
                     "Failed to update API key: " + error.getMessage())));
             });
@@ -154,12 +155,15 @@ public class ApiKeyServiceImpl implements ApiKeyService {
         log.info("Revoking API key: {} for merchant: {}", keyId, merchantId);
         
         return apiKeyRepository.findByKeyIdAndMerchantId(keyId, merchantId)
+            .switchIfEmpty(Mono.error(new RuntimeException("API_KEY_NOT_FOUND")))
             .flatMap(entity -> apiKeyRepository.delete(entity)
                 .thenReturn(Result.<Void, PaymentError>ok(null)))
-            .switchIfEmpty(Mono.just(Result.<Void, PaymentError>err(
-                PaymentError.of("API_KEY_NOT_FOUND", "API key not found: " + keyId))))
             .onErrorResume(error -> {
                 log.error("Error revoking API key: {}", error.getMessage(), error);
+                if (error.getMessage() != null && error.getMessage().contains("API_KEY_NOT_FOUND")) {
+                    return Mono.just(Result.<Void, PaymentError>err(
+                        PaymentError.of("API_KEY_NOT_FOUND", "API key not found: " + keyId)));
+                }
                 return Mono.just(Result.err(PaymentError.of("API_KEY_REVOKE_FAILED",
                     "Failed to revoke API key: " + error.getMessage())));
             });
@@ -193,9 +197,9 @@ public class ApiKeyServiceImpl implements ApiKeyService {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest((plaintextApiKey + hashKey).getBytes(StandardCharsets.UTF_8));
             return Base64.getEncoder().encodeToString(hash);
-        } catch (Exception e) {
-            log.error("Error hashing API key", e);
-            throw new RuntimeException("Failed to hash API key", e);
+        } catch (java.security.NoSuchAlgorithmException e) {
+            log.error("Error hashing API key: SHA-256 algorithm not available", e);
+            throw new IllegalStateException("Failed to hash API key: SHA-256 algorithm not available", e);
         }
     }
 }

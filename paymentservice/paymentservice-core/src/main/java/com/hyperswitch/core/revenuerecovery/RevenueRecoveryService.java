@@ -126,5 +126,48 @@ public interface RevenueRecoveryService {
         String merchantId,
         String keyType
     );
+    
+    /**
+     * Backfill revenue recovery data
+     */
+    Mono<com.hyperswitch.common.types.Result<com.hyperswitch.common.dto.RevenueRecoveryBackfillResponse, PaymentError>> dataBackfill(
+        String merchantId,
+        java.util.List<com.hyperswitch.common.dto.RevenueRecoveryBackfillRequest> records,
+        java.time.Instant cutoffDatetime
+    );
+    
+    /**
+     * Update Redis data for revenue recovery
+     */
+    Mono<com.hyperswitch.common.types.Result<Void, PaymentError>> updateRedisData(
+        String merchantId,
+        String key,
+        java.util.Map<String, Object> data
+    );
+    
+    /**
+     * Get backfill status
+     */
+    Mono<com.hyperswitch.common.types.Result<com.hyperswitch.common.dto.BackfillStatusResponse, PaymentError>> getBackfillStatus(
+        String merchantId,
+        String backfillId
+    );
+    
+    /**
+     * Get process tracker data
+     */
+    Mono<com.hyperswitch.common.types.Result<com.hyperswitch.common.dto.ProcessTrackerResponse, PaymentError>> getProcessTracker(
+        String merchantId,
+        String processId
+    );
+    
+    /**
+     * Resume revenue recovery
+     */
+    Mono<com.hyperswitch.common.types.Result<com.hyperswitch.common.dto.ProcessTrackerResponse, PaymentError>> resumeRecovery(
+        String merchantId,
+        String processId,
+        com.hyperswitch.common.dto.ResumeRecoveryRequest request
+    );
 }
 
