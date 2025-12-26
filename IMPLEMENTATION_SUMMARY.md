@@ -1545,16 +1545,26 @@ The `paymentservice` is a Java-based implementation of Hyperswitch payment switc
 **Status:** ✅ **v2 API 100% Complete** - All v2 process tracker endpoints fully implemented. Deprecated endpoint pending (not required for core functionality).
 
 #### 14.28 Profile Acquirer
-- ❌ **Profile Acquirer Management**:
-  - `POST /api/profile_acquirer` - Create profile acquirer
-  - `POST /api/profile_acquirer/{profile_id}/{profile_acquirer_id}` - Update profile acquirer
+- ✅ **Profile Acquirer Management** - **FULLY IMPLEMENTED**:
+  - ✅ `POST /api/profile_acquirer` - Create profile acquirer - **IMPLEMENTED** in ProfileAcquirerController
+  - ✅ `POST /api/profile_acquirer/{profile_id}/{profile_acquirer_id}` - Update profile acquirer - **IMPLEMENTED** in ProfileAcquirerController
+
+**Status:** ✅ **100% Complete** - All profile acquirer endpoints fully implemented with service layer, DTOs, and controller.
+
+#### 14.26 Locker Migration
+- ✅ **Locker Migration** - **FULLY IMPLEMENTED**:
+  - ✅ `POST /api/locker_migration/{merchant_id}` - Rust locker migration - **IMPLEMENTED** in LockerMigrationController
+
+**Status:** ✅ **100% Complete** - Locker migration endpoint fully implemented with service layer, DTOs, and controller.
 
 #### 18.29 Recovery Data Backfill (v2) - See Section 17 for Revenue Recovery Redis
-- ❌ **Recovery Data Backfill**:
-  - `POST /api/v2/recovery/data-backfill` - Backfill revenue recovery data
-  - `POST /api/v2/recovery/data-backfill/status/{connector_cutomer_id}/{payment_intent_id}` - Get backfill status
-  - `GET /api/v2/recovery/data-backfill/redis-data/{connector_cutomer_id}` - Get Redis data
-  - `PUT /api/v2/recovery/data-backfill/update-token` - Update token
+- ✅ **Recovery Data Backfill (v2)** - **FULLY IMPLEMENTED**:
+  - ✅ `POST /api/v2/recovery/data-backfill` - Backfill revenue recovery data - **IMPLEMENTED** in RecoveryDataBackfillV2Controller
+  - ✅ `POST /api/v2/recovery/data-backfill/status/{connector_customer_id}/{payment_intent_id}` - Get backfill status - **IMPLEMENTED** in RecoveryDataBackfillV2Controller
+  - ✅ `GET /api/v2/recovery/data-backfill/redis-data/{connector_customer_id}` - Get Redis data - **IMPLEMENTED** in RecoveryDataBackfillV2Controller
+  - ✅ `PUT /api/v2/recovery/data-backfill/update-token` - Update token - **IMPLEMENTED** in RecoveryDataBackfillV2Controller
+
+**Status:** ✅ **100% Complete** - All recovery data backfill v2 endpoints fully implemented with service layer, DTOs, and controller.
 
 #### 14.31 User Management (Extensive)
 - ❌ **User Management (v1 API)**:

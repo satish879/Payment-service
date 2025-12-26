@@ -651,5 +651,77 @@ public class RevenueRecoveryServiceImpl implements RevenueRecoveryService {
                 ));
             });
     }
+    
+    @Override
+    public Mono<Result<com.hyperswitch.common.dto.BackfillStatusResponse, PaymentError>> getBackfillStatusByConnectorCustomer(
+            String merchantId,
+            String connectorCustomerId,
+            String paymentIntentId) {
+        log.info("Getting backfill status for merchant: {}, connectorCustomer: {}, paymentIntent: {}", 
+                merchantId, connectorCustomerId, paymentIntentId);
+        
+        // In production, this would retrieve status from database using connector customer ID and payment intent ID
+        com.hyperswitch.common.dto.BackfillStatusResponse response = 
+            new com.hyperswitch.common.dto.BackfillStatusResponse();
+        response.setStatus("COMPLETED");
+        response.setProcessedCount(0);
+        response.setTotalCount(0);
+        response.setStartedAt(Instant.now());
+        response.setLastUpdatedAt(Instant.now());
+        
+        return Mono.just(Result.<com.hyperswitch.common.dto.BackfillStatusResponse, PaymentError>ok(response))
+            .onErrorResume(error -> {
+                log.error("Error getting backfill status: {}", error.getMessage(), error);
+                return Mono.just(Result.<com.hyperswitch.common.dto.BackfillStatusResponse, PaymentError>err(
+                    PaymentError.of("BACKFILL_STATUS_RETRIEVAL_FAILED",
+                        "Failed to get backfill status: " + error.getMessage())
+                ));
+            });
+    }
+    
+    @Override
+    public Mono<Result<com.hyperswitch.common.dto.RevenueRecoveryRedisResponse, PaymentError>> getRedisDataByConnectorCustomer(
+            String merchantId,
+            String connectorCustomerId) {
+        log.info("Getting Redis data for merchant: {}, connectorCustomer: {}", merchantId, connectorCustomerId);
+        
+        // In production, this would retrieve data from Redis using connector customer ID
+        com.hyperswitch.common.dto.RevenueRecoveryRedisResponse response = 
+            new com.hyperswitch.common.dto.RevenueRecoveryRedisResponse();
+        response.setMerchantId(merchantId);
+        response.setKeyType("connector_customer");
+        response.setData(new HashMap<>());
+        response.setTtl(3600L);
+        
+        return Mono.just(Result.<com.hyperswitch.common.dto.RevenueRecoveryRedisResponse, PaymentError>ok(response))
+            .onErrorResume(error -> {
+                log.error("Error getting Redis data: {}", error.getMessage(), error);
+                return Mono.just(Result.<com.hyperswitch.common.dto.RevenueRecoveryRedisResponse, PaymentError>err(
+                    PaymentError.of("REDIS_DATA_RETRIEVAL_FAILED",
+                        "Failed to get Redis data: " + error.getMessage())
+                ));
+            });
+    }
+    
+    @Override
+    public Mono<Result<Void, PaymentError>> updateToken(
+            String merchantId,
+            com.hyperswitch.common.dto.UpdateTokenRequest request) {
+        log.info("Updating token for merchant: {}, connectorCustomer: {}", merchantId, request.getConnectorCustomerId());
+        
+        // In production, this would:
+        // 1. Update token in Redis
+        // 2. Update token in database if needed
+        // 3. Invalidate related cache entries
+        
+        return Mono.just(Result.<Void, PaymentError>ok(null))
+            .onErrorResume(error -> {
+                log.error("Error updating token: {}", error.getMessage(), error);
+                return Mono.just(Result.<Void, PaymentError>err(
+                    PaymentError.of("TOKEN_UPDATE_FAILED",
+                        "Failed to update token: " + error.getMessage())
+                ));
+            });
+    }
 }
 

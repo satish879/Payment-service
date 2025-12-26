@@ -169,5 +169,30 @@ public interface RevenueRecoveryService {
         String processId,
         com.hyperswitch.common.dto.ResumeRecoveryRequest request
     );
+    
+    /**
+     * Get backfill status by connector customer and payment intent
+     */
+    Mono<com.hyperswitch.common.types.Result<com.hyperswitch.common.dto.BackfillStatusResponse, PaymentError>> getBackfillStatusByConnectorCustomer(
+        String merchantId,
+        String connectorCustomerId,
+        String paymentIntentId
+    );
+    
+    /**
+     * Get Redis data by connector customer
+     */
+    Mono<com.hyperswitch.common.types.Result<com.hyperswitch.common.dto.RevenueRecoveryRedisResponse, PaymentError>> getRedisDataByConnectorCustomer(
+        String merchantId,
+        String connectorCustomerId
+    );
+    
+    /**
+     * Update token in recovery data backfill
+     */
+    Mono<com.hyperswitch.common.types.Result<Void, PaymentError>> updateToken(
+        String merchantId,
+        com.hyperswitch.common.dto.UpdateTokenRequest request
+    );
 }
 
