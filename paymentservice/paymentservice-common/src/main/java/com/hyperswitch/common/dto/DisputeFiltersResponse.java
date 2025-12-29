@@ -1,67 +1,50 @@
 package com.hyperswitch.common.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 /**
- * Response for available dispute filters
+ * Response DTO for dispute filters
  */
 public class DisputeFiltersResponse {
-    private List<String> connector;
-    private List<String> currency;
-    private List<String> status;
-    private List<String> stage;
-    private List<String> reason;
     
-    public DisputeFiltersResponse() {
+    @JsonProperty("query_data")
+    private List<FilterValue> queryData;
+    
+    // Getters and Setters
+    public List<FilterValue> getQueryData() {
+        return queryData;
     }
     
-    public DisputeFiltersResponse(List<String> connector, List<String> currency, 
-                                 List<String> status, List<String> stage, List<String> reason) {
-        this.connector = connector;
-        this.currency = currency;
-        this.status = status;
-        this.stage = stage;
-        this.reason = reason;
+    public void setQueryData(List<FilterValue> queryData) {
+        this.queryData = queryData;
     }
     
-    public List<String> getConnector() {
-        return connector;
-    }
-    
-    public void setConnector(List<String> connector) {
-        this.connector = connector;
-    }
-    
-    public List<String> getCurrency() {
-        return currency;
-    }
-    
-    public void setCurrency(List<String> currency) {
-        this.currency = currency;
-    }
-    
-    public List<String> getStatus() {
-        return status;
-    }
-    
-    public void setStatus(List<String> status) {
-        this.status = status;
-    }
-    
-    public List<String> getStage() {
-        return stage;
-    }
-    
-    public void setStage(List<String> stage) {
-        this.stage = stage;
-    }
-    
-    public List<String> getReason() {
-        return reason;
-    }
-    
-    public void setReason(List<String> reason) {
-        this.reason = reason;
+    /**
+     * Filter value containing dimension and values
+     */
+    public static class FilterValue {
+        @JsonProperty("dimension")
+        private String dimension;
+        
+        @JsonProperty("values")
+        private List<String> values;
+        
+        // Getters and Setters
+        public String getDimension() {
+            return dimension;
+        }
+        
+        public void setDimension(String dimension) {
+            this.dimension = dimension;
+        }
+        
+        public List<String> getValues() {
+            return values;
+        }
+        
+        public void setValues(List<String> values) {
+            this.values = values;
+        }
     }
 }
-

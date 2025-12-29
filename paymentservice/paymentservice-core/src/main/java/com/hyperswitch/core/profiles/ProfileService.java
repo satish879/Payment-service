@@ -113,5 +113,12 @@ public interface ProfileService {
     Mono<Result<Map<String, Object>, PaymentError>> getDecisionManagerConfig(
             String merchantId, 
             String profileId);
+    
+    /**
+     * List profiles at profile level (filtered by profile ID from auth context)
+     */
+    Mono<Result<Flux<ProfileResponse>, PaymentError>> listProfilesAtProfileLevel(
+            String merchantId, 
+            String profileId);
 }
 

@@ -4,9 +4,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 /**
- * Response DTO for refund filters
+ * Response DTO for auth event filters
  */
-public class RefundFiltersResponse {
+public class AuthEventFiltersResponse {
     
     @JsonProperty("query_data")
     private List<FilterValue> queryData;
@@ -48,3 +48,4 @@ public class RefundFiltersResponse {
         }
     }
 }
+

@@ -169,6 +169,25 @@ public class ProfileServiceImpl implements ProfileService {
     }
     
     @Override
+    public Mono<Result<Flux<ProfileResponse>, PaymentError>> listProfilesAtProfileLevel(
+            String merchantId, 
+            String profileId) {
+        
+        log.info("Listing profiles at profile level for merchant: {}, profile: {}", merchantId, profileId);
+        
+        // Filter profiles by merchantId and profileId
+        return Mono.just(Result.<Flux<ProfileResponse>, PaymentError>ok(
+            profileRepository.findByMerchantId(merchantId)
+                .filter(entity -> profileId.equals(entity.getProfileId()))
+                .map(this::toProfileResponse)))
+            .onErrorResume(error -> {
+                log.error("Error listing profiles at profile level: {}", error.getMessage(), error);
+                return Mono.just(Result.err(PaymentError.of("PROFILE_LIST_FAILED",
+                    "Failed to list profiles at profile level: " + error.getMessage())));
+            });
+    }
+    
+    @Override
     public Mono<Result<Void, PaymentError>> deleteProfile(
             String merchantId, 
             String profileId) {

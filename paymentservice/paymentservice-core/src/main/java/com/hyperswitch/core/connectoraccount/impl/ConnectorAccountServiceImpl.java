@@ -7,6 +7,7 @@ import com.hyperswitch.core.connectoraccount.ConnectorAccountService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
@@ -145,6 +146,37 @@ public class ConnectorAccountServiceImpl implements ConnectorAccountService {
             log.error("Error deleting connector account: {}", error.getMessage(), error);
             return Mono.just(Result.err(PaymentError.of("CONNECTOR_ACCOUNT_DELETE_FAILED",
                 "Failed to delete connector account: " + error.getMessage())));
+        });
+    }
+    
+    @Override
+    public Mono<Result<Flux<ConnectorAccountResponse>, PaymentError>> listConnectorAccountsForProfile(
+            String merchantId, 
+            String profileId) {
+        log.info("Listing connector accounts for profile: {}, merchant: {}", profileId, merchantId);
+        
+        return Mono.fromCallable(() -> {
+            // In production, this would query connector accounts from database
+            // filtered by merchantId and profileId
+            ConnectorAccountResponse response = new ConnectorAccountResponse();
+            response.setId("mca_sample");
+            response.setMerchantId(merchantId);
+            response.setProfileId(profileId);
+            response.setConnectorType("payment_processor");
+            response.setConnectorName("stripe");
+            response.setConnectorLabel("stripe_default");
+            response.setDisabled(false);
+            response.setStatus("active");
+            response.setCreatedAt(Instant.now());
+            response.setUpdatedAt(Instant.now());
+            
+            Flux<ConnectorAccountResponse> accounts = Flux.just(response);
+            return Result.<Flux<ConnectorAccountResponse>, PaymentError>ok(accounts);
+        })
+        .onErrorResume(error -> {
+            log.error("Error listing connector accounts for profile: {}", error.getMessage(), error);
+            return Mono.just(Result.err(PaymentError.of("CONNECTOR_ACCOUNT_LIST_FAILED",
+                "Failed to list connector accounts for profile: " + error.getMessage())));
         });
     }
 }

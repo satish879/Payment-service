@@ -2379,9 +2379,36 @@ public class PaymentServiceImpl implements PaymentService {
                 }
                 
                 com.hyperswitch.common.dto.RefundFiltersResponse response = new com.hyperswitch.common.dto.RefundFiltersResponse();
-                response.setConnector(new ArrayList<>(connectors));
-                response.setCurrency(new ArrayList<>(currencies));
-                response.setStatus(new ArrayList<>(statuses));
+                List<com.hyperswitch.common.dto.RefundFiltersResponse.FilterValue> queryData = new ArrayList<>();
+                
+                // Add connector filter values
+                if (!connectors.isEmpty()) {
+                    com.hyperswitch.common.dto.RefundFiltersResponse.FilterValue connectorFilter = 
+                        new com.hyperswitch.common.dto.RefundFiltersResponse.FilterValue();
+                    connectorFilter.setDimension("connector");
+                    connectorFilter.setValues(new ArrayList<>(connectors));
+                    queryData.add(connectorFilter);
+                }
+                
+                // Add currency filter values
+                if (!currencies.isEmpty()) {
+                    com.hyperswitch.common.dto.RefundFiltersResponse.FilterValue currencyFilter = 
+                        new com.hyperswitch.common.dto.RefundFiltersResponse.FilterValue();
+                    currencyFilter.setDimension("currency");
+                    currencyFilter.setValues(new ArrayList<>(currencies));
+                    queryData.add(currencyFilter);
+                }
+                
+                // Add status filter values
+                if (!statuses.isEmpty()) {
+                    com.hyperswitch.common.dto.RefundFiltersResponse.FilterValue statusFilter = 
+                        new com.hyperswitch.common.dto.RefundFiltersResponse.FilterValue();
+                    statusFilter.setDimension("status");
+                    statusFilter.setValues(new ArrayList<>(statuses));
+                    queryData.add(statusFilter);
+                }
+                
+                response.setQueryData(queryData);
                 
                 return Result.<com.hyperswitch.common.dto.RefundFiltersResponse, PaymentError>ok(response);
             })

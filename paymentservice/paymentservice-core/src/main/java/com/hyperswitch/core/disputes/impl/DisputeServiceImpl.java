@@ -508,11 +508,54 @@ public class DisputeServiceImpl implements DisputeService {
                 }
                 
                 DisputeFiltersResponse response = new DisputeFiltersResponse();
-                response.setConnector(new ArrayList<>(connectors));
-                response.setCurrency(new ArrayList<>(currencies));
-                response.setStatus(new ArrayList<>(statuses));
-                response.setStage(new ArrayList<>(stages));
-                response.setReason(new ArrayList<>(reasons));
+                List<DisputeFiltersResponse.FilterValue> queryData = new ArrayList<>();
+                
+                // Add connector filter values
+                if (!connectors.isEmpty()) {
+                    DisputeFiltersResponse.FilterValue connectorFilter = 
+                        new DisputeFiltersResponse.FilterValue();
+                    connectorFilter.setDimension("connector");
+                    connectorFilter.setValues(new ArrayList<>(connectors));
+                    queryData.add(connectorFilter);
+                }
+                
+                // Add currency filter values
+                if (!currencies.isEmpty()) {
+                    DisputeFiltersResponse.FilterValue currencyFilter = 
+                        new DisputeFiltersResponse.FilterValue();
+                    currencyFilter.setDimension("currency");
+                    currencyFilter.setValues(new ArrayList<>(currencies));
+                    queryData.add(currencyFilter);
+                }
+                
+                // Add status filter values
+                if (!statuses.isEmpty()) {
+                    DisputeFiltersResponse.FilterValue statusFilter = 
+                        new DisputeFiltersResponse.FilterValue();
+                    statusFilter.setDimension("status");
+                    statusFilter.setValues(new ArrayList<>(statuses));
+                    queryData.add(statusFilter);
+                }
+                
+                // Add stage filter values
+                if (!stages.isEmpty()) {
+                    DisputeFiltersResponse.FilterValue stageFilter = 
+                        new DisputeFiltersResponse.FilterValue();
+                    stageFilter.setDimension("stage");
+                    stageFilter.setValues(new ArrayList<>(stages));
+                    queryData.add(stageFilter);
+                }
+                
+                // Add reason filter values
+                if (!reasons.isEmpty()) {
+                    DisputeFiltersResponse.FilterValue reasonFilter = 
+                        new DisputeFiltersResponse.FilterValue();
+                    reasonFilter.setDimension("reason");
+                    reasonFilter.setValues(new ArrayList<>(reasons));
+                    queryData.add(reasonFilter);
+                }
+                
+                response.setQueryData(queryData);
                 
                 return Either.<PaymentError, DisputeFiltersResponse>right(response);
             })

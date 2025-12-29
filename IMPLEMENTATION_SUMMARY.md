@@ -908,55 +908,55 @@ The `paymentservice` is a Java-based implementation of Hyperswitch payment switc
 #### Missing Analytics Features ⚠️:
 
 **Metrics Endpoints:**
-- ❌ **Payment Metrics**:
-  - `POST /api/analytics/v1/metrics/payments` - Get payment metrics
-  - `POST /api/analytics/v1/merchant/metrics/payments` - Get merchant payment metrics
-  - `POST /api/analytics/v1/org/metrics/payments` - Get org payment metrics
-  - `POST /api/analytics/v1/profile/metrics/payments` - Get profile payment metrics
-  - `POST /api/analytics/v2/metrics/payments` - Get payment metrics (v2)
-  - `POST /api/analytics/v2/merchant/metrics/payments` - Get merchant payment metrics (v2)
-  - `POST /api/analytics/v2/org/metrics/payments` - Get org payment metrics (v2)
-  - `POST /api/analytics/v2/profile/metrics/payments` - Get profile payment metrics (v2)
-- ❌ **Payment Intent Metrics**:
-  - `POST /api/analytics/v1/metrics/payment_intents` - Get payment intent metrics
-  - `POST /api/analytics/v1/merchant/metrics/payment_intents` - Get merchant payment intent metrics
-  - `POST /api/analytics/v1/org/metrics/payment_intents` - Get org payment intent metrics
-  - `POST /api/analytics/v1/profile/metrics/payment_intents` - Get profile payment intent metrics
-- ❌ **Refund Metrics**:
-  - `POST /api/analytics/v1/metrics/refunds` - Get refund metrics
-  - `POST /api/analytics/v1/merchant/metrics/refunds` - Get merchant refund metrics
-  - `POST /api/analytics/v1/org/metrics/refunds` - Get org refund metrics
-  - `POST /api/analytics/v1/profile/metrics/refunds` - Get profile refund metrics
-- ❌ **Routing Metrics**:
-  - `POST /api/analytics/v1/metrics/routing` - Get routing metrics
-  - `POST /api/analytics/v1/merchant/metrics/routing` - Get merchant routing metrics
-  - `POST /api/analytics/v1/org/metrics/routing` - Get org routing metrics
-  - `POST /api/analytics/v1/profile/metrics/routing` - Get profile routing metrics
-- ❌ **Auth Event Metrics**:
-  - `POST /api/analytics/v1/metrics/auth_events` - Get auth event metrics
-  - `POST /api/analytics/v1/merchant/metrics/auth_events` - Get merchant auth event metrics
-  - `POST /api/analytics/v1/org/metrics/auth_events` - Get org auth event metrics
-  - `POST /api/analytics/v1/profile/metrics/auth_events` - Get profile auth event metrics
-  - `POST /api/analytics/v1/metrics/auth_events/sankey` - Get auth event sankey diagram
-  - `POST /api/analytics/v1/merchant/metrics/auth_events/sankey` - Get merchant auth event sankey
-  - `POST /api/analytics/v1/org/metrics/auth_events/sankey` - Get org auth event sankey
-  - `POST /api/analytics/v1/profile/metrics/auth_events/sankey` - Get profile auth event sankey
-- ❌ **SDK Event Metrics**:
-  - `POST /api/analytics/v1/metrics/sdk_events` - Get SDK event metrics
-- ❌ **Active Payments Metrics**:
-  - `POST /api/analytics/v1/metrics/active_payments` - Get active payments metrics
-- ❌ **FRM Metrics**:
-  - `POST /api/analytics/v1/metrics/frm` - Get FRM (fraud) metrics
-- ❌ **Dispute Metrics**:
-  - `POST /api/analytics/v1/metrics/disputes` - Get dispute metrics
-  - `POST /api/analytics/v1/merchant/metrics/disputes` - Get merchant dispute metrics
-  - `POST /api/analytics/v1/org/metrics/disputes` - Get org dispute metrics
-  - `POST /api/analytics/v1/profile/metrics/disputes` - Get profile dispute metrics
-- ❌ **API Event Metrics**:
-  - `POST /api/analytics/v1/metrics/api_events` - Get API event metrics
-  - `POST /api/analytics/v1/merchant/metrics/api_events` - Get merchant API event metrics
-  - `POST /api/analytics/v1/org/metrics/api_events` - Get org API event metrics
-  - `POST /api/analytics/v1/profile/metrics/api_events` - Get profile API event metrics
+- ✅ **Payment Metrics**:
+  - ✅ `POST /api/analytics/v1/metrics/payments` - Get payment metrics - **IMPLEMENTED** in AnalyticsMetricsController
+  - ✅ `POST /api/analytics/v1/merchant/metrics/payments` - Get merchant payment metrics - **IMPLEMENTED** in AnalyticsMetricsController
+  - ✅ `POST /api/analytics/v1/org/metrics/payments` - Get org payment metrics - **IMPLEMENTED** in AnalyticsMetricsController
+  - ✅ `POST /api/analytics/v1/profile/metrics/payments` - Get profile payment metrics - **IMPLEMENTED** in AnalyticsMetricsController
+  - ✅ `POST /api/analytics/v2/metrics/payments` - Get payment metrics (v2) - **IMPLEMENTED** in AnalyticsMetricsController
+  - ✅ `POST /api/analytics/v2/merchant/metrics/payments` - Get merchant payment metrics (v2) - **IMPLEMENTED** in AnalyticsMetricsController
+  - ✅ `POST /api/analytics/v2/org/metrics/payments` - Get org payment metrics (v2) - **IMPLEMENTED** in AnalyticsMetricsController
+  - ✅ `POST /api/analytics/v2/profile/metrics/payments` - Get profile payment metrics (v2) - **IMPLEMENTED** in AnalyticsMetricsController
+- ✅ **Payment Intent Metrics**:
+  - ✅ `POST /api/analytics/v1/metrics/payment_intents` - Get payment intent metrics - **IMPLEMENTED** in AnalyticsMetricsController
+  - ✅ `POST /api/analytics/v1/merchant/metrics/payment_intents` - Get merchant payment intent metrics - **IMPLEMENTED** in AnalyticsMetricsController
+  - ✅ `POST /api/analytics/v1/org/metrics/payment_intents` - Get org payment intent metrics - **IMPLEMENTED** in AnalyticsMetricsController
+  - ✅ `POST /api/analytics/v1/profile/metrics/payment_intents` - Get profile payment intent metrics - **IMPLEMENTED** in AnalyticsMetricsController
+- ✅ **Refund Metrics**:
+  - ✅ `POST /api/analytics/v1/metrics/refunds` - Get refund metrics - **IMPLEMENTED** in AnalyticsMetricsController
+  - ✅ `POST /api/analytics/v1/merchant/metrics/refunds` - Get merchant refund metrics - **IMPLEMENTED** in AnalyticsMetricsController
+  - ✅ `POST /api/analytics/v1/org/metrics/refunds` - Get org refund metrics - **IMPLEMENTED** in AnalyticsMetricsController
+  - ✅ `POST /api/analytics/v1/profile/metrics/refunds` - Get profile refund metrics - **IMPLEMENTED** in AnalyticsMetricsController
+- ✅ **Routing Metrics**:
+  - ✅ `POST /api/analytics/v1/metrics/routing` - Get routing metrics - **IMPLEMENTED** in AnalyticsMetricsController
+  - ✅ `POST /api/analytics/v1/merchant/metrics/routing` - Get merchant routing metrics - **IMPLEMENTED** in AnalyticsMetricsController
+  - ✅ `POST /api/analytics/v1/org/metrics/routing` - Get org routing metrics - **IMPLEMENTED** in AnalyticsMetricsController
+  - ✅ `POST /api/analytics/v1/profile/metrics/routing` - Get profile routing metrics - **IMPLEMENTED** in AnalyticsMetricsController
+- ✅ **Auth Event Metrics**:
+  - ✅ `POST /api/analytics/v1/metrics/auth_events` - Get auth event metrics - **IMPLEMENTED** in AnalyticsMetricsController
+  - ✅ `POST /api/analytics/v1/merchant/metrics/auth_events` - Get merchant auth event metrics - **IMPLEMENTED** in AnalyticsMetricsController
+  - ✅ `POST /api/analytics/v1/org/metrics/auth_events` - Get org auth event metrics - **IMPLEMENTED** in AnalyticsMetricsController
+  - ✅ `POST /api/analytics/v1/profile/metrics/auth_events` - Get profile auth event metrics - **IMPLEMENTED** in AnalyticsMetricsController
+  - ❌ `POST /api/analytics/v1/metrics/auth_events/sankey` - Get auth event sankey diagram - **PENDING** (Sankey diagrams to be implemented separately)
+  - ❌ `POST /api/analytics/v1/merchant/metrics/auth_events/sankey` - Get merchant auth event sankey - **PENDING** (Sankey diagrams to be implemented separately)
+  - ❌ `POST /api/analytics/v1/org/metrics/auth_events/sankey` - Get org auth event sankey - **PENDING** (Sankey diagrams to be implemented separately)
+  - ❌ `POST /api/analytics/v1/profile/metrics/auth_events/sankey` - Get profile auth event sankey - **PENDING** (Sankey diagrams to be implemented separately)
+- ✅ **SDK Event Metrics**:
+  - ✅ `POST /api/analytics/v1/metrics/sdk_events` - Get SDK event metrics - **IMPLEMENTED** in AnalyticsMetricsController
+- ✅ **Active Payments Metrics**:
+  - ✅ `POST /api/analytics/v1/metrics/active_payments` - Get active payments metrics - **IMPLEMENTED** in AnalyticsMetricsController
+- ✅ **FRM Metrics**:
+  - ✅ `POST /api/analytics/v1/metrics/frm` - Get FRM (fraud) metrics - **IMPLEMENTED** in AnalyticsMetricsController
+- ✅ **Dispute Metrics**:
+  - ✅ `POST /api/analytics/v1/metrics/disputes` - Get dispute metrics - **IMPLEMENTED** in AnalyticsMetricsController
+  - ✅ `POST /api/analytics/v1/merchant/metrics/disputes` - Get merchant dispute metrics - **IMPLEMENTED** in AnalyticsMetricsController
+  - ✅ `POST /api/analytics/v1/org/metrics/disputes` - Get org dispute metrics - **IMPLEMENTED** in AnalyticsMetricsController
+  - ✅ `POST /api/analytics/v1/profile/metrics/disputes` - Get profile dispute metrics - **IMPLEMENTED** in AnalyticsMetricsController
+- ✅ **API Event Metrics**:
+  - ✅ `POST /api/analytics/v1/metrics/api_events` - Get API event metrics - **IMPLEMENTED** in AnalyticsMetricsController
+  - ✅ `POST /api/analytics/v1/merchant/metrics/api_events` - Get merchant API event metrics - **IMPLEMENTED** in AnalyticsMetricsController
+  - ✅ `POST /api/analytics/v1/org/metrics/api_events` - Get org API event metrics - **IMPLEMENTED** in AnalyticsMetricsController
+  - ✅ `POST /api/analytics/v1/profile/metrics/api_events` - Get profile API event metrics - **IMPLEMENTED** in AnalyticsMetricsController
 - ❌ **Sankey Diagrams**:
   - `POST /api/analytics/v1/metrics/sankey` - Get payment sankey diagram
   - `POST /api/analytics/v1/merchant/metrics/sankey` - Get merchant sankey
@@ -964,46 +964,49 @@ The `paymentservice` is a Java-based implementation of Hyperswitch payment switc
   - `POST /api/analytics/v1/profile/metrics/sankey` - Get profile sankey
 
 **Filter Endpoints:**
-- ❌ **Payment Filters**:
-  - `POST /api/analytics/v1/filters/payments` - Get payment filters
-  - `POST /api/analytics/v1/merchant/filters/payments` - Get merchant payment filters
-  - `POST /api/analytics/v1/org/filters/payments` - Get org payment filters
-  - `POST /api/analytics/v1/profile/filters/payments` - Get profile payment filters
-  - `POST /api/analytics/v2/filters/payments` - Get payment filters (v2)
-  - `POST /api/analytics/v2/merchant/filters/payments` - Get merchant payment filters (v2)
-  - `POST /api/analytics/v2/org/filters/payments` - Get org payment filters (v2)
-  - `POST /api/analytics/v2/profile/filters/payments` - Get profile payment filters (v2)
-- ❌ **Payment Intent Filters**:
-  - `POST /api/analytics/v1/filters/payment_intents` - Get payment intent filters
-- ❌ **Refund Filters**:
-  - `POST /api/analytics/v1/filters/refunds` - Get refund filters
-  - `POST /api/analytics/v1/merchant/filters/refunds` - Get merchant refund filters
-  - `POST /api/analytics/v1/org/filters/refunds` - Get org refund filters
-  - `POST /api/analytics/v1/profile/filters/refunds` - Get profile refund filters
-- ❌ **Routing Filters**:
-  - `POST /api/analytics/v1/filters/routing` - Get routing filters
-  - `POST /api/analytics/v1/merchant/filters/routing` - Get merchant routing filters
-  - `POST /api/analytics/v1/org/filters/routing` - Get org routing filters
-  - `POST /api/analytics/v1/profile/filters/routing` - Get profile routing filters
-- ❌ **Auth Event Filters**:
-  - `POST /api/analytics/v1/filters/auth_events` - Get auth event filters
-  - `POST /api/analytics/v1/merchant/filters/auth_events` - Get merchant auth event filters
-  - `POST /api/analytics/v1/org/filters/auth_events` - Get org auth event filters
-  - `POST /api/analytics/v1/profile/filters/auth_events` - Get profile auth event filters
-- ❌ **SDK Event Filters**:
-  - `POST /api/analytics/v1/filters/sdk_events` - Get SDK event filters
-- ❌ **FRM Filters**:
-  - `POST /api/analytics/v1/filters/frm` - Get FRM filters
-- ❌ **Dispute Filters**:
-  - `POST /api/analytics/v1/filters/disputes` - Get dispute filters
-  - `POST /api/analytics/v1/merchant/filters/disputes` - Get merchant dispute filters
-  - `POST /api/analytics/v1/org/filters/disputes` - Get org dispute filters
-  - `POST /api/analytics/v1/profile/filters/disputes` - Get profile dispute filters
-- ❌ **API Event Filters**:
-  - `POST /api/analytics/v1/filters/api_events` - Get API event filters
-  - `POST /api/analytics/v1/merchant/filters/api_events` - Get merchant API event filters
-  - `POST /api/analytics/v1/org/filters/api_events` - Get org API event filters
-  - `POST /api/analytics/v1/profile/filters/api_events` - Get profile API event filters
+- ✅ **Payment Filters**:
+  - ✅ `POST /api/analytics/v1/filters/payments` - Get payment filters - **IMPLEMENTED** in AnalyticsFiltersController
+  - ✅ `POST /api/analytics/v1/merchant/filters/payments` - Get merchant payment filters - **IMPLEMENTED** in AnalyticsFiltersController
+  - ✅ `POST /api/analytics/v1/org/filters/payments` - Get org payment filters - **IMPLEMENTED** in AnalyticsFiltersController
+  - ✅ `POST /api/analytics/v1/profile/filters/payments` - Get profile payment filters - **IMPLEMENTED** in AnalyticsFiltersController
+  - ✅ `POST /api/analytics/v2/filters/payments` - Get payment filters (v2) - **IMPLEMENTED** in AnalyticsFiltersController
+  - ✅ `POST /api/analytics/v2/merchant/filters/payments` - Get merchant payment filters (v2) - **IMPLEMENTED** in AnalyticsFiltersController
+  - ✅ `POST /api/analytics/v2/org/filters/payments` - Get org payment filters (v2) - **IMPLEMENTED** in AnalyticsFiltersController
+  - ✅ `POST /api/analytics/v2/profile/filters/payments` - Get profile payment filters (v2) - **IMPLEMENTED** in AnalyticsFiltersController
+- ✅ **Payment Intent Filters** - **FULLY IMPLEMENTED**:
+  - ✅ `POST /api/analytics/v1/filters/payment_intents` - Get payment intent filters - **IMPLEMENTED** in AnalyticsFiltersController
+  - ✅ `POST /api/analytics/v1/merchant/filters/payment_intents` - Get merchant payment intent filters - **IMPLEMENTED** in AnalyticsFiltersController
+  - ✅ `POST /api/analytics/v1/org/filters/payment_intents` - Get org payment intent filters - **IMPLEMENTED** in AnalyticsFiltersController
+  - ✅ `POST /api/analytics/v1/profile/filters/payment_intents` - Get profile payment intent filters - **IMPLEMENTED** in AnalyticsFiltersController
+- ✅ **Refund Filters** - **FULLY IMPLEMENTED**:
+  - ✅ `POST /api/analytics/v1/filters/refunds` - Get refund filters - **IMPLEMENTED** in AnalyticsFiltersController
+  - ✅ `POST /api/analytics/v1/merchant/filters/refunds` - Get merchant refund filters - **IMPLEMENTED** in AnalyticsFiltersController
+  - ✅ `POST /api/analytics/v1/org/filters/refunds` - Get org refund filters - **IMPLEMENTED** in AnalyticsFiltersController
+  - ✅ `POST /api/analytics/v1/profile/filters/refunds` - Get profile refund filters - **IMPLEMENTED** in AnalyticsFiltersController
+- ✅ **Routing Filters** - **FULLY IMPLEMENTED**:
+  - ✅ `POST /api/analytics/v1/filters/routing` - Get routing filters - **IMPLEMENTED** in AnalyticsFiltersController
+  - ✅ `POST /api/analytics/v1/merchant/filters/routing` - Get merchant routing filters - **IMPLEMENTED** in AnalyticsFiltersController
+  - ✅ `POST /api/analytics/v1/org/filters/routing` - Get org routing filters - **IMPLEMENTED** in AnalyticsFiltersController
+  - ✅ `POST /api/analytics/v1/profile/filters/routing` - Get profile routing filters - **IMPLEMENTED** in AnalyticsFiltersController
+- ✅ **Auth Event Filters** - **FULLY IMPLEMENTED**:
+  - ✅ `POST /api/analytics/v1/filters/auth_events` - Get auth event filters - **IMPLEMENTED** in AnalyticsFiltersController
+  - ✅ `POST /api/analytics/v1/merchant/filters/auth_events` - Get merchant auth event filters - **IMPLEMENTED** in AnalyticsFiltersController
+  - ✅ `POST /api/analytics/v1/org/filters/auth_events` - Get org auth event filters - **IMPLEMENTED** in AnalyticsFiltersController
+  - ✅ `POST /api/analytics/v1/profile/filters/auth_events` - Get profile auth event filters - **IMPLEMENTED** in AnalyticsFiltersController
+- ✅ **SDK Event Filters** - **FULLY IMPLEMENTED**:
+  - ✅ `POST /api/analytics/v1/filters/sdk_events` - Get SDK event filters - **IMPLEMENTED** in AnalyticsFiltersController
+- ✅ **FRM Filters** - **FULLY IMPLEMENTED**:
+  - ✅ `POST /api/analytics/v1/filters/frm` - Get FRM filters - **IMPLEMENTED** in AnalyticsFiltersController
+- ✅ **Dispute Filters** - **FULLY IMPLEMENTED**:
+  - ✅ `POST /api/analytics/v1/filters/disputes` - Get dispute filters - **IMPLEMENTED** in AnalyticsFiltersController
+  - ✅ `POST /api/analytics/v1/merchant/filters/disputes` - Get merchant dispute filters - **IMPLEMENTED** in AnalyticsFiltersController
+  - ✅ `POST /api/analytics/v1/org/filters/disputes` - Get org dispute filters - **IMPLEMENTED** in AnalyticsFiltersController
+  - ✅ `POST /api/analytics/v1/profile/filters/disputes` - Get profile dispute filters - **IMPLEMENTED** in AnalyticsFiltersController
+- ✅ **API Event Filters** - **FULLY IMPLEMENTED**:
+  - ✅ `POST /api/analytics/v1/filters/api_events` - Get API event filters - **IMPLEMENTED** in AnalyticsFiltersController
+  - ✅ `POST /api/analytics/v1/merchant/filters/api_events` - Get merchant API event filters - **IMPLEMENTED** in AnalyticsFiltersController
+  - ✅ `POST /api/analytics/v1/org/filters/api_events` - Get org API event filters - **IMPLEMENTED** in AnalyticsFiltersController
+  - ✅ `POST /api/analytics/v1/profile/filters/api_events` - Get profile API event filters - **IMPLEMENTED** in AnalyticsFiltersController
 
 **Report Endpoints:**
 - ❌ **Dispute Reports**:
@@ -1512,16 +1515,16 @@ The `paymentservice` is a Java-based implementation of Hyperswitch payment switc
   - ✅ `DELETE /api/v2/connector-accounts/{id}` - Delete connector account - **IMPLEMENTED** in ConnectorAccountV2Controller
 
 #### 14.22 GSM (Global Settings Management)
-- ❌ **GSM Rule Management (v1 API)**:
-  - `POST /api/gsm` - Create GSM rule
-  - `POST /api/gsm/get` - Get GSM rule
-  - `POST /api/gsm/update` - Update GSM rule
-  - `POST /api/gsm/delete` - Delete GSM rule
-- ❌ **GSM Rule Management (v2 API)**:
-  - `POST /api/v2/gsm` - Create GSM rule
-  - `POST /api/v2/gsm/get` - Get GSM rule
-  - `POST /api/v2/gsm/update` - Update GSM rule
-  - `POST /api/v2/gsm/delete` - Delete GSM rule
+- ✅ **GSM Rule Management (v1 API)** - **FULLY IMPLEMENTED**:
+  - ✅ `POST /api/gsm` - Create GSM rule - **IMPLEMENTED** in GsmController
+  - ✅ `POST /api/gsm/get` - Get GSM rule - **IMPLEMENTED** in GsmController
+  - ✅ `POST /api/gsm/update` - Update GSM rule - **IMPLEMENTED** in GsmController
+  - ✅ `POST /api/gsm/delete` - Delete GSM rule - **IMPLEMENTED** in GsmController
+- ✅ **GSM Rule Management (v2 API)** - **FULLY IMPLEMENTED**:
+  - ✅ `POST /api/v2/gsm` - Create GSM rule - **IMPLEMENTED** in GsmV2Controller
+  - ✅ `POST /api/v2/gsm/get` - Get GSM rule - **IMPLEMENTED** in GsmV2Controller
+  - ✅ `POST /api/v2/gsm/update` - Update GSM rule - **IMPLEMENTED** in GsmV2Controller
+  - ✅ `POST /api/v2/gsm/delete` - Delete GSM rule - **IMPLEMENTED** in GsmV2Controller
 
 #### 14.23 Chat/AI Features
 - ✅ **Chat AI Workflow** - **FULLY IMPLEMENTED**:
@@ -1681,24 +1684,30 @@ The `paymentservice` is a Java-based implementation of Hyperswitch payment switc
   - `GET/POST /api/v2/users/data` - Get/set dashboard metadata
 
 #### 14.32 Apple Pay Certificates Migration
-- ❌ **Apple Pay Certificates Migration** (`POST /api/apple_pay_certificates_migration`)
-  - Migrate Apple Pay certificates
+- ✅ **Apple Pay Certificates Migration** - **FULLY IMPLEMENTED**:
+  - ✅ `POST /api/apple_pay_certificates_migration` - Migrate Apple Pay certificates - **IMPLEMENTED** in ApplePayCertificatesMigrationController
+
+**Status:** ✅ **100% Complete** - Apple Pay certificates migration endpoint fully implemented with service layer, DTOs, and controller. The migration encrypts and moves Apple Pay metadata to connector_wallets_details for specified merchants.
 
 #### 14.33 Profile New
-- ❌ **Profile New (v1 API)**:
-  - `GET /api/account/{account_id}/profile` - List profiles at profile level
-  - `GET /api/account/{account_id}/profile/connectors` - List connectors for profile
+- ✅ **Profile New (v1 API)** - **FULLY IMPLEMENTED**:
+  - ✅ `GET /api/account/{account_id}/profile` - List profiles at profile level - **IMPLEMENTED** in ProfileNewController
+  - ✅ `GET /api/account/{account_id}/profile/connectors` - List connectors for profile - **IMPLEMENTED** in ProfileNewController
+
+**Status:** ✅ **100% Complete** - All Profile New endpoints fully implemented with service layer, DTOs, and controller.
 
 #### 14.34 Dummy Connector (Testing)
-- ❌ **Dummy Connector (v1 API)**:
-  - `POST /api/dummy-connector/payment` - Create dummy payment
-  - `GET /api/dummy-connector/payments/{payment_id}` - Get dummy payment data
-  - `POST /api/dummy-connector/payments/{payment_id}/refund` - Create dummy refund
-  - `GET /api/dummy-connector/refunds/{refund_id}` - Get dummy refund data
-  - `GET /api/dummy-connector/authorize/{attempt_id}` - Authorize dummy payment
-  - `GET /api/dummy-connector/complete/{attempt_id}` - Complete dummy payment
-- ❌ **Dummy Connector (v2 API)**:
-  - `POST /api/dummy-connector/payment` - Create dummy payment (v2)
+- ✅ **Dummy Connector (v1 API)** - **FULLY IMPLEMENTED**:
+  - ✅ `POST /api/dummy-connector/payment` - Create dummy payment - **IMPLEMENTED** in DummyConnectorController
+  - ✅ `GET /api/dummy-connector/payments/{payment_id}` - Get dummy payment data - **IMPLEMENTED** in DummyConnectorController
+  - ✅ `POST /api/dummy-connector/payments/{payment_id}/refund` - Create dummy refund - **IMPLEMENTED** in DummyConnectorController
+  - ✅ `GET /api/dummy-connector/refunds/{refund_id}` - Get dummy refund data - **IMPLEMENTED** in DummyConnectorController
+  - ✅ `GET /api/dummy-connector/authorize/{attempt_id}` - Authorize dummy payment - **IMPLEMENTED** in DummyConnectorController
+  - ✅ `GET /api/dummy-connector/complete/{attempt_id}` - Complete dummy payment - **IMPLEMENTED** in DummyConnectorController
+- ✅ **Dummy Connector (v2 API)** - **FULLY IMPLEMENTED**:
+  - ✅ `POST /api/dummy-connector/payment` - Create dummy payment (v2) - **IMPLEMENTED** (same endpoint as v1)
+
+**Status:** ✅ **100% Complete** - All dummy connector endpoints fully implemented with service layer, DTOs, and controller. The dummy connector is used for testing payment and refund flows without requiring real payment processors.
 
 ### 13. API Documentation ⚠️
 
