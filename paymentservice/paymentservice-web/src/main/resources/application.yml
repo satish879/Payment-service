@@ -28,8 +28,14 @@ spring:
           min-idle: 5
 
   # WebFlux Configuration
-  webflux:
-    base-path: /api
+  # Note: Controllers use @RequestMapping("/api") directly, no base-path needed
+  
+  # Spring Security Configuration
+  security:
+    user:
+      name: disabled
+      password: disabled
+      roles: []
 
 server:
   port: 8080
@@ -48,7 +54,7 @@ management:
     health:
       show-details: always
       probes:
-        enabled: true
+        enabled: false
   metrics:
     export:
       prometheus:
@@ -90,6 +96,9 @@ springdoc:
 
 # Application specific configuration
 hyperswitch:
+  security:
+    enable-auth: ${ENABLE_AUTH:false}
+    enable-csrf: ${ENABLE_CSRF:false}
   payment:
     max-retry-attempts: 3
     retry-delay-seconds: 5

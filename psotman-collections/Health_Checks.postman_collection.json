@@ -1,0 +1,155 @@
+{
+	"info": {
+		"name": "Hyperswitch Payment Service - Health Checks",
+		"description": "Postman collection for testing health check APIs locally",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "health-checks-collection"
+	},
+	"item": [
+		{
+			"name": "Basic Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/health",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"health"
+					]
+				},
+				"description": "Returns basic health status of the service. This is a simple endpoint that returns a static healthy status."
+			},
+			"response": []
+		},
+		{
+			"name": "Deep Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/health/ready",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"health",
+						"ready"
+					]
+				},
+				"description": "Returns comprehensive health status of all components including database, Redis, and other services."
+			},
+			"response": []
+		},
+		{
+			"name": "Health Check (v2 API)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/v2/health",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"health"
+					]
+				},
+				"description": "Returns health status using v2 API format."
+			},
+			"response": []
+		},
+		{
+			"name": "Deep Health Check (v2 API)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/v2/health/ready",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"health",
+						"ready"
+					]
+				},
+				"description": "Returns comprehensive health status of all components using v2 API format."
+			},
+			"response": []
+		},
+		{
+			"name": "Spring Boot Actuator Health",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/actuator/health",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"actuator",
+						"health"
+					]
+				},
+				"description": "Spring Boot Actuator health endpoint that provides detailed health information including database, Redis, and other component statuses."
+			},
+			"response": []
+		},
+		{
+			"name": "Spring Boot Actuator Info",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/actuator/info",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"actuator",
+						"info"
+					]
+				},
+				"description": "Spring Boot Actuator info endpoint that provides application information."
+			},
+			"response": []
+		},
+		{
+			"name": "Spring Boot Actuator Metrics",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/actuator/metrics",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"actuator",
+						"metrics"
+					]
+				},
+				"description": "Spring Boot Actuator metrics endpoint that lists all available metrics."
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		}
+	]
+}
+

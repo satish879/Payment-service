@@ -7,9 +7,7 @@ import com.hyperswitch.core.health.HealthCheckService;
 import io.r2dbc.spi.ConnectionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
-import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.util.HashMap;
@@ -18,7 +16,6 @@ import java.util.Map;
 /**
  * Implementation of HealthCheckService
  */
-@Service
 public class HealthCheckServiceImpl implements HealthCheckService {
     
     private static final Logger log = LoggerFactory.getLogger(HealthCheckServiceImpl.class);
@@ -26,12 +23,12 @@ public class HealthCheckServiceImpl implements HealthCheckService {
     private final ConnectionFactory connectionFactory;
     private final ReactiveRedisConnectionFactory redisConnectionFactory;
     
-    @Autowired
-    public HealthCheckServiceImpl(
-            ConnectionFactory connectionFactory,
-            ReactiveRedisConnectionFactory redisConnectionFactory) {
+    public HealthCheckServiceImpl(ConnectionFactory connectionFactory, ReactiveRedisConnectionFactory redisConnectionFactory) {
         this.connectionFactory = connectionFactory;
         this.redisConnectionFactory = redisConnectionFactory;
+        log.error("=== HealthCheckServiceImpl BEAN CREATED ===");
+        log.error("ConnectionFactory: {}", connectionFactory != null ? "available" : "null");
+        log.error("ReactiveRedisConnectionFactory: {}", redisConnectionFactory != null ? "available" : "null");
     }
     
     @Override
@@ -87,6 +84,10 @@ public class HealthCheckServiceImpl implements HealthCheckService {
     }
     
     private Mono<Boolean> checkDatabase() {
+        if (connectionFactory == null) {
+            log.warn("ConnectionFactory is null - cannot check database");
+            return Mono.just(Boolean.FALSE);
+        }
         return Mono.from(connectionFactory.create())
             .flatMap(connection -> 
                 Mono.from(connection.createStatement("SELECT 1").execute())
@@ -99,6 +100,10 @@ public class HealthCheckServiceImpl implements HealthCheckService {
     }
     
     private Mono<Boolean> checkRedis() {
+        if (redisConnectionFactory == null) {
+            log.warn("ReactiveRedisConnectionFactory is null - cannot check Redis");
+            return Mono.just(Boolean.FALSE);
+        }
         return redisConnectionFactory.getReactiveConnection()
             .ping()
             .thenReturn(Boolean.TRUE)
