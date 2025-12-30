@@ -137,6 +137,9 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <mainClass>com.hyperswitch.PaymentServiceApplication</mainClass>
+                    <jvmArguments>
+                        -Dspring.classformat.ignore=true
+                    </jvmArguments>
                 </configuration>
             </plugin>
         </plugins>
