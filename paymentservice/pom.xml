@@ -30,6 +30,10 @@
         <mapstruct.version>1.6.3</mapstruct.version>
         <vavr.version>0.10.4</vavr.version>
         <junit.version>5.11.4</junit.version>
+        <mockito.version>5.14.2</mockito.version>
+        <testcontainers.version>1.20.4</testcontainers.version>
+        <wiremock.version>3.9.1</wiremock.version>
+        <assertj.version>3.26.3</assertj.version>
     </properties>
 
     <modules>
@@ -121,6 +125,28 @@
                 <groupId>org.mapstruct</groupId>
                 <artifactId>mapstruct</artifactId>
                 <version>${mapstruct.version}</version>
+            </dependency>
+
+            <!-- Test Dependencies -->
+            <dependency>
+                <groupId>com.github.tomakehurst</groupId>
+                <artifactId>wiremock-jre8</artifactId>
+                <version>${wiremock.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers</artifactId>
+                <version>${testcontainers.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>${testcontainers.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${testcontainers.version}</version>
             </dependency>
 
         </dependencies>

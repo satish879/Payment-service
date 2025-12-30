@@ -1,12 +1,12 @@
 -- Mandate status and type enums
-CREATE TYPE IF NOT EXISTS mandate_status AS ENUM (
+CREATE TYPE mandate_status AS ENUM (
     'ACTIVE',
     'INACTIVE',
     'PENDING',
     'REVOKED'
 );
 
-CREATE TYPE IF NOT EXISTS mandate_type AS ENUM (
+CREATE TYPE mandate_type AS ENUM (
     'SINGLE_USE',
     'MULTI_USE'
 );
