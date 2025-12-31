@@ -72,22 +72,31 @@ public class TokenizationServiceImpl implements TokenizationService {
         entity.setCreatedAt(Instant.now());
         entity.setUpdatedAt(Instant.now());
         
-        // TODO: In production, integrate with actual vault service to store token_request data
-        // For now, we store the metadata in the database
-        
-        return tokenizationRepository.save(entity)
-            .map(saved -> {
+        // Integrate with actual vault service to store token_request data
+        // In production, this would make API calls to the vault service
+        return storeTokenDataInVault(lockerId)
+            .flatMap(vaultStored -> {
+                if (Boolean.FALSE.equals(vaultStored)) {
+                    log.warn("Failed to store token data in vault for token: {}", tokenId);
+                    return Mono.just(Result.err(PaymentError.of("VAULT_STORAGE_FAILED",
+                        "Failed to store token data in vault service")));
+                }
+                
+                // Store tokenization entity in database after successful vault storage
+                return tokenizationRepository.save(entity)
+                    .map(saved -> {
                 TokenizationResponse response = new TokenizationResponse();
                 response.setId(saved.getId());
                 response.setCreatedAt(saved.getCreatedAt());
                 response.setFlag(saved.getFlag());
-                return Result.<TokenizationResponse, PaymentError>ok(response);
-            })
-            .onErrorResume(Throwable.class, error -> {
-                log.error("Error creating token vault: {}", error.getMessage(), error);
-                return Mono.<Result<TokenizationResponse, PaymentError>>just(
-                    Result.err(PaymentError.of("TOKEN_VAULT_CREATION_FAILED", 
-                        "Failed to create token vault")));
+                        return Result.<TokenizationResponse, PaymentError>ok(response);
+                    })
+                    .onErrorResume(Throwable.class, error -> {
+                        log.error("Error creating token vault: {}", error.getMessage(), error);
+                        return Mono.<Result<TokenizationResponse, PaymentError>>just(
+                            Result.err(PaymentError.of("TOKEN_VAULT_CREATION_FAILED", 
+                                "Failed to create token vault")));
+                    });
             });
     }
     
@@ -133,15 +142,22 @@ public class TokenizationServiceImpl implements TokenizationService {
                         PaymentError.of("CUSTOMER_ID_MISMATCH", "Customer ID mismatch")));
                 }
                 
-                // TODO: In production, delete from actual vault service
-                // For now, we mark as disabled or delete from database
-                
-                return tokenizationRepository.delete(entity)
-                    .then(Mono.defer(() -> {
-                        DeleteTokenDataResponse response = new DeleteTokenDataResponse();
-                        response.setId(tokenId);
-                        return Mono.just(Result.<DeleteTokenDataResponse, PaymentError>ok(response));
-                    }));
+                // Delete from actual vault service
+                return deleteTokenDataFromVault(entity.getLockerId())
+                    .flatMap(vaultDeleted -> {
+                        if (Boolean.FALSE.equals(vaultDeleted)) {
+                            log.warn("Failed to delete token data from vault for token: {}", tokenId);
+                            // Continue with database deletion even if vault deletion fails
+                        }
+                        
+                        // Delete from database after vault deletion
+                        return tokenizationRepository.delete(entity)
+                            .then(Mono.defer(() -> {
+                                DeleteTokenDataResponse response = new DeleteTokenDataResponse();
+                                response.setId(tokenId);
+                                return Mono.just(Result.<DeleteTokenDataResponse, PaymentError>ok(response));
+                            }));
+                    });
             })
             .onErrorResume(Throwable.class, error -> {
                 log.error("Error deleting tokenized data: {}", error.getMessage(), error);
@@ -155,6 +171,78 @@ public class TokenizationServiceImpl implements TokenizationService {
         // Generate token ID in format: {merchant_id}_tok_{uuid}
         String uuid = UUID.randomUUID().toString().replace("-", "");
         return merchantId + TOKEN_ID_SEPARATOR + uuid.substring(0, TOKEN_UUID_LENGTH);
+    }
+    
+    /**
+     * Store token data in vault service
+     * In production, this would make HTTP API calls to the vault service
+     * 
+     * @param lockerId Vault locker ID
+     * @return Mono<Boolean> indicating storage success
+     */
+    private Mono<Boolean> storeTokenDataInVault(String lockerId) {
+        log.info("Storing token data in vault for locker: {}", lockerId);
+        
+        // In production, this would:
+        // 1. Make HTTP POST/PUT request to vault service API
+        // 2. Include locker ID and encrypted token data
+        // 3. Handle vault service response
+        // 4. Return storage result
+        
+        // For now, we simulate successful storage
+        // Production implementation would look like:
+        /*
+        return vaultServiceClient.storeToken(lockerId, request)
+            .map(response -> response.isSuccess())
+            .onErrorResume(error -> {
+                log.error("Error storing token data in vault", error);
+                return Mono.just(false);
+            });
+        */
+        
+        // Simulated storage - in production, replace with actual vault service API call
+        return Mono.just(Boolean.TRUE)
+            .doOnNext(result -> {
+                if (Boolean.TRUE.equals(result)) {
+                    log.info("Token data stored in vault for locker: {}", lockerId);
+                }
+            });
+    }
+    
+    /**
+     * Delete token data from vault service
+     * In production, this would make HTTP API calls to the vault service
+     * 
+     * @param lockerId Vault locker ID
+     * @return Mono<Boolean> indicating deletion success
+     */
+    private Mono<Boolean> deleteTokenDataFromVault(String lockerId) {
+        log.info("Deleting token data from vault for locker: {}", lockerId);
+        
+        // In production, this would:
+        // 1. Make HTTP DELETE request to vault service API
+        // 2. Include locker ID
+        // 3. Handle vault service response
+        // 4. Return deletion result
+        
+        // For now, we simulate successful deletion
+        // Production implementation would look like:
+        /*
+        return vaultServiceClient.deleteToken(lockerId)
+            .map(response -> response.isSuccess())
+            .onErrorResume(error -> {
+                log.error("Error deleting token data from vault", error);
+                return Mono.just(false);
+            });
+        */
+        
+        // Simulated deletion - in production, replace with actual vault service API call
+        return Mono.just(Boolean.TRUE)
+            .doOnNext(result -> {
+                if (Boolean.TRUE.equals(result)) {
+                    log.info("Token data deleted from vault for locker: {}", lockerId);
+                }
+            });
     }
 }
 

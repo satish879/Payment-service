@@ -21,5 +21,8 @@ public interface ApiKeyRepository extends ReactiveCrudRepository<ApiKeyEntity, S
     
     @Query("SELECT * FROM api_keys WHERE prefix = :prefix")
     Mono<ApiKeyEntity> findByPrefix(String prefix);
+    
+    @Query("SELECT * FROM api_keys WHERE key_id = :keyId")
+    Mono<ApiKeyEntity> findByKeyId(String keyId);
 }
 

@@ -9,6 +9,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +26,8 @@ import java.util.Map;
 @RequestMapping("/api/webhooks")
 @Tag(name = "Connector Webhooks", description = "Webhook signature verification for connectors")
 public class ConnectorWebhookController {
+    
+    private static final Logger log = LoggerFactory.getLogger(ConnectorWebhookController.class);
     
     private final ConnectorWebhookVerifier webhookVerifier;
     private final MerchantConnectorAccountService connectorAccountService;
@@ -98,19 +102,79 @@ public class ConnectorWebhookController {
     
     /**
      * Get webhook credentials for a connector
-     * TODO: In production, fetch from database
+     * Fetches from database via MerchantConnectorAccountService
      */
     private Map<String, String> getWebhookCredentials(String connectorName, String merchantId) {
         Map<String, String> credentials = new HashMap<>();
         
-        // TODO: Fetch from MerchantConnectorAccountService
-        // For now, use environment variables
+        if (merchantId == null || merchantId.isEmpty()) {
+            log.warn("Merchant ID is null or empty, cannot fetch webhook credentials");
+            return credentials;
+        }
+        
+        // Fetch from MerchantConnectorAccountService
+        try {
+            return connectorAccountService.listConnectorAccounts(merchantId)
+                .blockOptional()
+                .map(result -> {
+                    if (result.isOk()) {
+                        return result.unwrap()
+                            .filter(account -> connectorName.equalsIgnoreCase(account.getConnectorName()))
+                            .next()
+                            .blockOptional()
+                            .map(account -> {
+                                Map<String, String> creds = new HashMap<>();
+                                
+                                // Extract webhook secret from connector webhook details
+                                if (account.getConnectorWebhookDetails() != null) {
+                                    Map<String, Object> webhookDetails = account.getConnectorWebhookDetails();
+                                    if (webhookDetails.containsKey("webhook_secret")) {
+                                        creds.put("webhook_secret", 
+                                            webhookDetails.get("webhook_secret").toString());
+                                    }
+                                    if (webhookDetails.containsKey("merchant_secret")) {
+                                        creds.put("merchant_secret", 
+                                            webhookDetails.get("merchant_secret").toString());
+                                    }
+                                }
+                                
+                                // Fallback: Try metadata
+                                if (creds.isEmpty() && account.getMetadata() != null) {
+                                    Map<String, Object> metadata = account.getMetadata();
+                                    if (metadata.containsKey("webhook_secret")) {
+                                        creds.put("webhook_secret", 
+                                            metadata.get("webhook_secret").toString());
+                                    }
+                                }
+                                
+                                return creds;
+                            })
+                            .orElseGet(() -> {
+                                log.warn("Connector account not found for connector: {}", connectorName);
+                                return getFallbackWebhookCredentials(connectorName);
+                            });
+                    } else {
+                        log.warn("Failed to list connector accounts: {}", result.unwrapErr().getMessage());
+                        return getFallbackWebhookCredentials(connectorName);
+                    }
+                })
+                .orElseGet(() -> getFallbackWebhookCredentials(connectorName));
+        } catch (Exception e) {
+            log.error("Error fetching webhook credentials from database", e);
+            return getFallbackWebhookCredentials(connectorName);
+        }
+    }
+    
+    /**
+     * Get fallback webhook credentials from environment variables
+     */
+    private Map<String, String> getFallbackWebhookCredentials(String connectorName) {
+        Map<String, String> credentials = new HashMap<>();
         String envKey = "CONNECTOR_" + connectorName.toUpperCase() + "_WEBHOOK_SECRET";
         String secret = System.getenv(envKey);
         if (secret != null) {
             credentials.put("webhook_secret", secret);
         }
-        
         return credentials;
     }
 }

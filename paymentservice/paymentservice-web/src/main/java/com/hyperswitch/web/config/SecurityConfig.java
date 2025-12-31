@@ -1,5 +1,6 @@
 package com.hyperswitch.web.config;
 
+import com.hyperswitch.storage.repository.ApiKeyRepository;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +32,9 @@ public class SecurityConfig {
 
     @Autowired(required = false)
     private ApiKeyAuthenticationFilter apiKeyAuthenticationFilter;
+    
+    @Autowired(required = false)
+    private ApiKeyRepository apiKeyRepository;
 
     @PostConstruct
     public void init() {
@@ -50,9 +54,18 @@ public class SecurityConfig {
         // Configure authentication
         if (enableAuth && apiKeyAuthenticationFilter != null) {
             logger.info("Authentication is ENABLED - configuring API key authentication");
-            AuthenticationWebFilter authenticationWebFilter = new AuthenticationWebFilter(
-                new ApiKeyAuthenticationManager()
-            );
+            
+            // Create ApiKeyAuthenticationManager with ApiKeyRepository
+            ApiKeyAuthenticationManager authManager;
+            if (apiKeyRepository != null) {
+                authManager = new ApiKeyAuthenticationManager(apiKeyRepository);
+            } else {
+                logger.warn("ApiKeyRepository not available - API key authentication may not work properly");
+                // Create with null repository - will fail gracefully
+                authManager = new ApiKeyAuthenticationManager(null);
+            }
+            
+            AuthenticationWebFilter authenticationWebFilter = new AuthenticationWebFilter(authManager);
             authenticationWebFilter.setServerAuthenticationConverter(apiKeyAuthenticationFilter);
             
             httpSecurity = httpSecurity

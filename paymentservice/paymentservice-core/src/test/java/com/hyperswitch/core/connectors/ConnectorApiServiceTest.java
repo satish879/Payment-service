@@ -10,6 +10,8 @@ import com.hyperswitch.core.connectors.ConnectorRateLimiter;
 import com.hyperswitch.core.connectors.ConnectorCacheService;
 import com.hyperswitch.core.test.TestDataBuilders;
 import com.hyperswitch.core.test.TestUtils;
+import com.hyperswitch.storage.entity.PaymentIntentEntity;
+import com.hyperswitch.storage.repository.PaymentIntentRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -49,6 +52,9 @@ class ConnectorApiServiceTest {
     @Mock
     private ConnectorCacheService cacheService;
     
+    @Mock
+    private PaymentIntentRepository paymentIntentRepository;
+    
     @InjectMocks
     private ConnectorApiServiceImpl connectorApiService;
     
@@ -75,6 +81,23 @@ class ConnectorApiServiceTest {
         apiResponse.put("id", "session_123");
         apiResponse.put("client_secret", "secret_123");
         
+        // Mock payment intent repository to return merchant ID
+        PaymentIntentEntity paymentIntent = new PaymentIntentEntity();
+        paymentIntent.setPaymentId(testPaymentId);
+        paymentIntent.setMerchantId("test_merchant_id");
+        when(paymentIntentRepository.findByPaymentId(testPaymentId))
+            .thenReturn(Mono.just(paymentIntent));
+        
+        // Mock connector account service to return a connector account
+        MerchantConnectorAccountResponse connectorAccount = new MerchantConnectorAccountResponse();
+        connectorAccount.setConnectorName(testConnectorName);
+        connectorAccount.setMerchantId("test_merchant_id");
+        connectorAccount.setId("connector_account_id");
+        
+        when(connectorAccountService.listConnectorAccounts(anyString()))
+            .thenReturn(Mono.just(Result.ok(Flux.just(connectorAccount))));
+        when(connectorAccountService.getConnectorAccount(anyString(), anyString()))
+            .thenReturn(Mono.just(Result.ok(connectorAccount)));
         when(rateLimiter.waitIfNeeded(anyString())).thenReturn(Mono.empty());
         when(retryService.executeWithRetry(any(), anyString(), anyString()))
             .thenAnswer(invocation -> {
@@ -117,6 +140,23 @@ class ConnectorApiServiceTest {
         apiResponse.put("id", "txn_123");
         apiResponse.put("status", "succeeded");
         
+        // Mock payment intent repository to return merchant ID
+        PaymentIntentEntity paymentIntent = new PaymentIntentEntity();
+        paymentIntent.setPaymentId(testPaymentId);
+        paymentIntent.setMerchantId("test_merchant_id");
+        when(paymentIntentRepository.findByPaymentId(testPaymentId))
+            .thenReturn(Mono.just(paymentIntent));
+        
+        // Mock connector account service to return a connector account
+        MerchantConnectorAccountResponse connectorAccount = new MerchantConnectorAccountResponse();
+        connectorAccount.setConnectorName(testConnectorName);
+        connectorAccount.setMerchantId("test_merchant_id");
+        connectorAccount.setId("connector_account_id");
+        
+        when(connectorAccountService.listConnectorAccounts(anyString()))
+            .thenReturn(Mono.just(Result.ok(Flux.just(connectorAccount))));
+        when(connectorAccountService.getConnectorAccount(anyString(), anyString()))
+            .thenReturn(Mono.just(Result.ok(connectorAccount)));
         when(rateLimiter.waitIfNeeded(anyString())).thenReturn(Mono.empty());
         when(retryService.executeWithRetry(any(), anyString(), anyString()))
             .thenAnswer(invocation -> {
@@ -156,6 +196,23 @@ class ConnectorApiServiceTest {
         Map<String, String> credentials = new HashMap<>();
         credentials.put("api_key", "test_api_key");
         
+        // Mock payment intent repository to return merchant ID
+        PaymentIntentEntity paymentIntent = new PaymentIntentEntity();
+        paymentIntent.setPaymentId(testPaymentId);
+        paymentIntent.setMerchantId("test_merchant_id");
+        when(paymentIntentRepository.findByPaymentId(testPaymentId))
+            .thenReturn(Mono.just(paymentIntent));
+        
+        // Mock connector account service to return a connector account
+        MerchantConnectorAccountResponse connectorAccount = new MerchantConnectorAccountResponse();
+        connectorAccount.setConnectorName(testConnectorName);
+        connectorAccount.setMerchantId("test_merchant_id");
+        connectorAccount.setId("connector_account_id");
+        
+        when(connectorAccountService.listConnectorAccounts(anyString()))
+            .thenReturn(Mono.just(Result.ok(Flux.just(connectorAccount))));
+        when(connectorAccountService.getConnectorAccount(anyString(), anyString()))
+            .thenReturn(Mono.just(Result.ok(connectorAccount)));
         when(rateLimiter.waitIfNeeded(anyString())).thenReturn(Mono.empty());
         when(retryService.executeWithRetry(any(), anyString(), anyString()))
             .thenAnswer(invocation -> {

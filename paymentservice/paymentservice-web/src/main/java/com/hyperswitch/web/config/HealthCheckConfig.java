@@ -8,6 +8,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
+import org.springframework.web.reactive.function.client.WebClient;
 
 /**
  * Configuration for HealthCheckService
@@ -41,8 +42,17 @@ public class HealthCheckConfig {
             // Bean not available, will be null
         }
         
+        // Get WebClient.Builder from context or create a default one
+        WebClient.Builder webClientBuilder;
+        try {
+            webClientBuilder = applicationContext.getBean(WebClient.Builder.class);
+        } catch (Exception _) {
+            // Create default WebClient.Builder if not available
+            webClientBuilder = WebClient.builder();
+        }
+        
         // Pass dependencies to constructor - they can be null if not available
-        return new HealthCheckServiceImpl(connectionFactory, redisConnectionFactory);
+        return new HealthCheckServiceImpl(connectionFactory, redisConnectionFactory, webClientBuilder);
     }
 }
 

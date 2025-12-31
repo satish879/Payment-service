@@ -1,6 +1,7 @@
 package com.hyperswitch.core.test;
 
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -10,7 +11,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 /**
  * Base class for integration tests with Testcontainers
  */
-@SpringBootTest
+@SpringBootTest(classes = TestConfiguration.class)
+@ComponentScan(basePackages = "com.hyperswitch")
 @Testcontainers
 public abstract class BaseIntegrationTest {
     

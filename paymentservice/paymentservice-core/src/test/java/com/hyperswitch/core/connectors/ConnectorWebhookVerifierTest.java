@@ -35,8 +35,11 @@ class ConnectorWebhookVerifierTest {
     @DisplayName("Should verify Stripe webhook signature")
     void testVerifyStripeSignature() {
         // Given
-        String signature = computeTestSignature(testPayload, testSecret);
-        String stripeSignature = "t=" + (System.currentTimeMillis() / 1000) + ",v1=" + signature;
+        long timestamp = System.currentTimeMillis() / 1000;
+        // Stripe signature is computed on timestamp + "." + payload
+        String signedPayload = timestamp + "." + testPayload;
+        String signature = computeTestSignature(signedPayload, testSecret);
+        String stripeSignature = "t=" + timestamp + ",v1=" + signature;
         
         // When
         boolean verified = webhookVerifier.verifyWebhookSignature(

@@ -14,7 +14,11 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 /**
  * Main application entry point for Hyperswitch Payment Service
  */
-@SpringBootApplication
+@SpringBootApplication(exclude = {
+    org.springframework.boot.actuate.autoconfigure.opentelemetry.OpenTelemetryAutoConfiguration.class,
+    org.springframework.boot.actuate.autoconfigure.tracing.OpenTelemetryTracingAutoConfiguration.class,
+    org.springframework.boot.actuate.autoconfigure.logging.OpenTelemetryLoggingAutoConfiguration.class
+})
 @ComponentScan(basePackages = {"com.hyperswitch"})
 @Import({SecurityConfig.class, HealthController.class, DatabaseConfig.class, HealthCheckConfig.class})
 @EnableR2dbcRepositories

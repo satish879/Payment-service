@@ -68,8 +68,10 @@ import com.hyperswitch.common.errors.PaymentError;
 import com.hyperswitch.common.types.AnalyticsDomain;
 import com.hyperswitch.common.types.Result;
 import com.hyperswitch.core.analytics.AnalyticsService;
+import com.hyperswitch.core.olap.OlapService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -84,6 +86,13 @@ import java.util.List;
 public class AnalyticsServiceImpl implements AnalyticsService {
     
     private static final Logger log = LoggerFactory.getLogger(AnalyticsServiceImpl.class);
+    
+    private final OlapService olapService;
+    
+    @Autowired
+    public AnalyticsServiceImpl(OlapService olapService) {
+        this.olapService = olapService;
+    }
     
     @Override
     public Mono<Result<DomainInfoResponse, PaymentError>> getDomainInfo(AnalyticsDomain domain) {

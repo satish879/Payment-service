@@ -9,6 +9,8 @@ import com.hyperswitch.core.connectors.MerchantConnectorAccountService;
 import com.hyperswitch.core.connectors.ConnectorRetryService;
 import com.hyperswitch.core.connectors.ConnectorRateLimiter;
 import com.hyperswitch.core.connectors.ConnectorCacheService;
+import com.hyperswitch.storage.entity.PaymentIntentEntity;
+import com.hyperswitch.storage.repository.PaymentIntentRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +34,7 @@ public class ConnectorApiServiceImpl implements ConnectorApiService {
     private final ConnectorRetryService retryService;
     private final ConnectorRateLimiter rateLimiter;
     private final ConnectorCacheService cacheService;
+    private final PaymentIntentRepository paymentIntentRepository;
     
     @Autowired
     public ConnectorApiServiceImpl(
@@ -39,12 +42,14 @@ public class ConnectorApiServiceImpl implements ConnectorApiService {
             MerchantConnectorAccountService connectorAccountService,
             ConnectorRetryService retryService,
             ConnectorRateLimiter rateLimiter,
-            ConnectorCacheService cacheService) {
+            ConnectorCacheService cacheService,
+            PaymentIntentRepository paymentIntentRepository) {
         this.httpClient = httpClient;
         this.connectorAccountService = connectorAccountService;
         this.retryService = retryService;
         this.rateLimiter = rateLimiter;
         this.cacheService = cacheService;
+        this.paymentIntentRepository = paymentIntentRepository;
     }
     
     @Override
@@ -409,15 +414,14 @@ public class ConnectorApiServiceImpl implements ConnectorApiService {
         
         // Sync is similar to get status but also updates local database
         return getPaymentStatus(paymentId, connectorName)
-            .map(result -> {
+            .flatMap(result -> {
                 if (result.isOk()) {
                     ConnectorPaymentStatusResponse statusResponse = result.unwrap();
-                    // TODO: Update local payment status in database using payment service
-                    // This would typically call PaymentService.updatePaymentStatus(paymentId, statusResponse.getStatus())
-                    log.info("Payment status synced for payment: {}, status: {}", 
-                            paymentId, statusResponse.getStatus());
+                    // Update local payment status in database using payment service
+                    return updatePaymentStatusFromConnector(paymentId, statusResponse.getStatus())
+                        .thenReturn(result);
                 }
-                return result;
+                return Mono.just(result);
             });
     }
     
@@ -429,58 +433,157 @@ public class ConnectorApiServiceImpl implements ConnectorApiService {
      */
     private Mono<Result<Map<String, String>, PaymentError>> getConnectorCredentials(
             String connectorName, String paymentId) {
-        // TODO: In production, get merchantId from paymentId or request context
-        // For now, we'll need merchantId to be passed or retrieved from payment
-        String merchantId = getMerchantIdFromPayment(paymentId);
-        
-        if (merchantId == null) {
-            return Mono.just(Result.err(PaymentError.of("MERCHANT_ID_REQUIRED",
-                "Merchant ID is required to fetch connector credentials")));
-        }
-        
-        // Fetch connector account from database
-        return connectorAccountService.listConnectorAccounts(merchantId)
-            .flatMap(result -> {
-                if (result.isErr()) {
-                    return Mono.just(Result.err(result.unwrapErr()));
+        // Get merchantId from paymentId or request context
+        return getMerchantIdFromPayment(paymentId)
+            .flatMap(merchantId -> {
+                if (merchantId == null || merchantId.isEmpty()) {
+                    return Mono.just(Result.err(PaymentError.of("MERCHANT_ID_REQUIRED",
+                        "Merchant ID is required to fetch connector credentials")));
                 }
                 
-                // Find the connector account matching the connector name
-                return result.unwrap()
-                    .filter(account -> connectorName.equalsIgnoreCase(account.getConnectorName()))
-                    .next()
-                    .map(account -> {
-                        Map<String, String> credentials = new HashMap<>();
-                        
-                        // TODO: In production, fetch connector account details from entity
-                        // For now, use metadata or environment variables as fallback
-                        // The actual implementation should decrypt and deserialize connectorAccountDetails from entity
-                        
-                        // Fallback: Try to get from environment or use placeholder
-                        String envKey = "CONNECTOR_" + connectorName.toUpperCase() + "_API_KEY";
-                        String apiKey = System.getenv(envKey);
-                        if (apiKey != null) {
-                            credentials.put("api_key", apiKey);
+                // Fetch connector account from database
+                return connectorAccountService.listConnectorAccounts(merchantId)
+                    .flatMap(result -> {
+                        if (result.isErr()) {
+                            return Mono.just(Result.err(result.unwrapErr()));
                         }
                         
-                        // In production, this would decrypt and parse the connectorAccountDetails
-                        // from the MerchantConnectorAccountEntity
-                        
-                        return Result.<Map<String, String>, PaymentError>ok(credentials);
-                    })
-                    .switchIfEmpty(Mono.just(Result.err(PaymentError.of("CONNECTOR_ACCOUNT_NOT_FOUND",
-                        "Connector account not found for connector: " + connectorName))));
+                        // Find the connector account matching the connector name
+                        return result.unwrap()
+                            .filter(account -> connectorName.equalsIgnoreCase(account.getConnectorName()))
+                            .next()
+                            .flatMap(account -> {
+                                // Fetch connector account details from entity
+                                return connectorAccountService.getConnectorAccount(merchantId, account.getId())
+                                    .map(accountResult -> {
+                                        if (accountResult.isErr()) {
+                                            log.warn("Failed to get connector account details, using fallback");
+                                            return extractCredentialsFromResponse(account, connectorName);
+                                        }
+                                        
+                                        // Extract credentials from connector account details
+                                        // In production, this would decrypt and deserialize connectorAccountDetails
+                                        return extractCredentialsFromResponse(accountResult.unwrap(), connectorName);
+                                    });
+                            })
+                            .switchIfEmpty(Mono.just(Result.err(PaymentError.of("CONNECTOR_ACCOUNT_NOT_FOUND",
+                                "Connector account not found for connector: " + connectorName))));
+                    });
             });
     }
     
     /**
-     * Get merchant ID from payment ID
-     * TODO: In production, fetch from payment service or database
+     * Extract credentials from connector account response
+     * In production, this would decrypt and parse connectorAccountDetails from entity
      */
-    private String getMerchantIdFromPayment(String paymentId) {
-        // TODO: Implement actual lookup from payment service
-        // For now, return null to indicate it needs to be provided
-        return null;
+    private Result<Map<String, String>, PaymentError> extractCredentialsFromResponse(
+            com.hyperswitch.common.dto.MerchantConnectorAccountResponse account, 
+            String connectorName) {
+        Map<String, String> credentials = new HashMap<>();
+        
+        // Try to extract from metadata if available
+        if (account.getMetadata() != null) {
+            Map<String, Object> metadata = account.getMetadata();
+            if (metadata.containsKey("api_key")) {
+                credentials.put("api_key", metadata.get("api_key").toString());
+            }
+            if (metadata.containsKey("api_secret")) {
+                credentials.put("api_secret", metadata.get("api_secret").toString());
+            }
+            if (metadata.containsKey("webhook_secret")) {
+                credentials.put("webhook_secret", metadata.get("webhook_secret").toString());
+            }
+        }
+        
+        // Fallback: Try to get from environment variables
+        if (credentials.isEmpty()) {
+            String envKey = "CONNECTOR_" + connectorName.toUpperCase() + "_API_KEY";
+            String apiKey = System.getenv(envKey);
+            if (apiKey != null) {
+                credentials.put("api_key", apiKey);
+            }
+        }
+        
+        // In production, decrypt and parse connectorAccountDetails byte array from entity
+        // This would use encryption service to decrypt the stored credentials
+        
+        return Result.ok(credentials);
+    }
+    
+    /**
+     * Update payment status from connector response
+     */
+    private Mono<Void> updatePaymentStatusFromConnector(String paymentId, String connectorStatus) {
+        log.info("Updating payment status for payment: {}, connector status: {}", paymentId, connectorStatus);
+        
+        return paymentIntentRepository.findByPaymentId(paymentId)
+            .flatMap(entity -> {
+                // Map connector status to payment status
+                String paymentStatus = mapConnectorStatusToPaymentStatus(connectorStatus);
+                entity.setStatus(paymentStatus);
+                entity.setLastSynced(java.time.Instant.now());
+                entity.setModifiedAt(java.time.Instant.now());
+                
+                return paymentIntentRepository.save(entity)
+                    .then()
+                    .doOnSuccess(unused -> log.info("Payment status updated for payment: {}, status: {}", 
+                            paymentId, paymentStatus))
+                    .doOnError(error -> log.error("Error updating payment status for payment: {}", 
+                            paymentId, error));
+            })
+            .switchIfEmpty(Mono.defer(() -> {
+                log.warn("Payment not found for status update: {}", paymentId);
+                return Mono.empty();
+            }))
+            .onErrorResume(error -> {
+                log.error("Error updating payment status from connector: {}", paymentId, error);
+                return Mono.empty();
+            });
+    }
+    
+    /**
+     * Map connector status to payment status
+     */
+    private String mapConnectorStatusToPaymentStatus(String connectorStatus) {
+        if (connectorStatus == null) {
+            return "processing";
+        }
+        
+        String lowerStatus = connectorStatus.toLowerCase();
+        if (lowerStatus.contains("succeeded") || lowerStatus.contains("success") 
+                || lowerStatus.contains("completed")) {
+            return "succeeded";
+        } else if (lowerStatus.contains("failed") || lowerStatus.contains("error")) {
+            return "failed";
+        } else if (lowerStatus.contains("pending") || lowerStatus.contains("processing")) {
+            return "processing";
+        } else if (lowerStatus.contains("requires_action") || lowerStatus.contains("challenge")) {
+            return "requires_customer_action";
+        } else {
+            return "processing";
+        }
+    }
+    
+    /**
+     * Get merchant ID from payment ID
+     * Fetches from payment service or database
+     */
+    private Mono<String> getMerchantIdFromPayment(String paymentId) {
+        if (paymentId == null || paymentId.isEmpty()) {
+            return Mono.just((String) null);
+        }
+        
+        // Fetch merchant ID from payment intent repository
+        return paymentIntentRepository.findByPaymentId(paymentId)
+            .map(PaymentIntentEntity::getMerchantId)
+            .switchIfEmpty(Mono.defer(() -> {
+                log.warn("Payment not found for paymentId: {}", paymentId);
+                return Mono.just((String) null);
+            }))
+            .onErrorResume(error -> {
+                log.error("Error fetching merchant ID from payment: {}", paymentId, error);
+                return Mono.just((String) null);
+            });
     }
     
     /**

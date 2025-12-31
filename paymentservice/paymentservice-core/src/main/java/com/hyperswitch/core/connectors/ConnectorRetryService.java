@@ -32,7 +32,8 @@ public class ConnectorRetryService {
             String connectorName,
             String operation) {
         
-        return apiCall.apply(null)
+        // Use Mono.defer to ensure the function is called on each retry attempt
+        return Mono.defer(() -> apiCall.apply(null))
             .retryWhen(Retry.backoff(MAX_RETRIES, INITIAL_DELAY)
                 .maxBackoff(MAX_DELAY)
                 .filter(error -> shouldRetry(error))

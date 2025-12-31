@@ -68,11 +68,9 @@ management:
       application: ${spring.application.name}
       environment: ${spring.profiles.active:default}
   tracing:
+    enabled: ${OTEL_TRACING_ENABLED:false}
     sampling:
       probability: 1.0
-  otlp:
-    tracing:
-      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4317}
 
 # Logging
 logging:
