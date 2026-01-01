@@ -12,8 +12,10 @@ CREATE TABLE IF NOT EXISTS success_rate_window (
     failed_attempts BIGINT DEFAULT 0,
     success_rate DECIMAL(5,2) DEFAULT 0.00,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    modified_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_profile_connector (profile_id, connector),
-    INDEX idx_window_time (window_start, window_end)
+    modified_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Create indexes separately (PostgreSQL doesn't support inline INDEX definitions)
+CREATE INDEX IF NOT EXISTS idx_profile_connector ON success_rate_window(profile_id, connector);
+CREATE INDEX IF NOT EXISTS idx_window_time ON success_rate_window(window_start, window_end);
 

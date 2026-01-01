@@ -6,7 +6,8 @@ CREATE TYPE authorization_status AS ENUM (
 );
 
 -- Create authorization table
-CREATE TABLE authorization (
+-- Note: "authorization" is a reserved keyword in PostgreSQL, so we quote it
+CREATE TABLE "authorization" (
     id VARCHAR(255) PRIMARY KEY,
     authorization_id VARCHAR(255) NOT NULL UNIQUE,
     merchant_id VARCHAR(255) NOT NULL,
@@ -22,8 +23,8 @@ CREATE TABLE authorization (
 );
 
 -- Create indexes
-CREATE INDEX idx_authorization_merchant_id ON authorization(merchant_id);
-CREATE INDEX idx_authorization_payment_id ON authorization(payment_id);
-CREATE INDEX idx_authorization_authorization_id ON authorization(authorization_id);
-CREATE INDEX idx_authorization_status ON authorization(status);
+CREATE INDEX idx_authorization_merchant_id ON "authorization"(merchant_id);
+CREATE INDEX idx_authorization_payment_id ON "authorization"(payment_id);
+CREATE INDEX idx_authorization_authorization_id ON "authorization"(authorization_id);
+CREATE INDEX idx_authorization_status ON "authorization"(status);
 

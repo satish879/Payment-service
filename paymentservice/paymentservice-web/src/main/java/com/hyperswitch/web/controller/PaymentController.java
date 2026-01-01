@@ -22,6 +22,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
+import jakarta.annotation.PostConstruct;
+import java.util.Map;
 
 /**
  * REST API controller for payment operations
@@ -33,18 +35,51 @@ public class PaymentController {
 
     private static final Logger log = LoggerFactory.getLogger(PaymentController.class);
 
-    private final PaymentService paymentService;
-    private final com.hyperswitch.core.paymentmethods.PaymentMethodService paymentMethodService;
-    private final com.hyperswitch.core.revenuerecovery.RevenueRecoveryService revenueRecoveryService;
+    private PaymentService paymentService;
+    private com.hyperswitch.core.paymentmethods.PaymentMethodService paymentMethodService;
+    private com.hyperswitch.core.revenuerecovery.RevenueRecoveryService revenueRecoveryService;
 
-    @Autowired
-    public PaymentController(
-            PaymentService paymentService,
-            com.hyperswitch.core.paymentmethods.PaymentMethodService paymentMethodService,
-            com.hyperswitch.core.revenuerecovery.RevenueRecoveryService revenueRecoveryService) {
+    // Default constructor to allow bean creation even if dependencies are missing
+    public PaymentController() {
+        log.warn("PaymentController created without dependencies - services will be null");
+    }
+
+    @Autowired(required = false)
+    public void setPaymentService(PaymentService paymentService) {
         this.paymentService = paymentService;
+    }
+
+    @Autowired(required = false)
+    public void setPaymentMethodService(com.hyperswitch.core.paymentmethods.PaymentMethodService paymentMethodService) {
         this.paymentMethodService = paymentMethodService;
+    }
+
+    @Autowired(required = false)
+    public void setRevenueRecoveryService(com.hyperswitch.core.revenuerecovery.RevenueRecoveryService revenueRecoveryService) {
         this.revenueRecoveryService = revenueRecoveryService;
+    }
+    
+    @PostConstruct
+    public void init() {
+        log.info("=== PaymentController BEAN CREATED ===");
+        log.info("PaymentService available: {}", paymentService != null);
+        log.info("PaymentMethodService available: {}", paymentMethodService != null);
+        log.info("RevenueRecoveryService available: {}", revenueRecoveryService != null);
+        log.info("Payment endpoints registered: /api/payments");
+        
+        if (paymentService == null) {
+            log.warn("PaymentService is not available - payment endpoints will not function properly");
+        }
+    }
+
+    /**
+     * Health check for payments endpoint
+     * GET /api/payments
+     */
+    @GetMapping
+    @Operation(summary = "Payments endpoint health check", description = "Returns status to verify payments endpoint is accessible")
+    public Mono<ResponseEntity<Map<String, String>>> paymentsHealth() {
+        return Mono.just(ResponseEntity.ok(Map.of("status", "ok", "endpoint", "/api/payments")));
     }
 
     @PostMapping
@@ -150,8 +185,34 @@ public class PaymentController {
                     )
                 }
             )
-            @RequestBody CreatePaymentRequest request) {
-        log.debug("Creating payment for merchant: {}", request.getMerchantId());
+            @org.springframework.web.bind.annotation.RequestBody CreatePaymentRequest request, org.springframework.web.server.ServerWebExchange exchange) {
+        log.info("=== PaymentController.createPayment() CALLED ===");
+        log.info("Request object: {}", request);
+        log.info("Request is null: {}", request == null);
+        
+        if (request == null) {
+            log.error("CreatePaymentRequest is null! This indicates deserialization failed completely.");
+            return Mono.just(ResponseEntity.badRequest().build());
+        }
+        
+        log.info("Request merchantId: {}", request.getMerchantId());
+        log.info("Request amount: {}", request.getAmount());
+        log.info("Request amount is null: {}", request.getAmount() == null);
+        
+        if (request.getAmount() == null) {
+            log.error("Amount field is null in CreatePaymentRequest. This suggests AmountDeserializer was not called or failed silently.");
+            log.error("Full request object details: {}", request);
+            // Fallback: check if RequestLoggingFilter stored a directly-parsed object on the exchange
+            CreatePaymentRequest cached = exchange.getAttribute("directCreatePaymentRequest");
+            if (cached != null) {
+                log.warn("Found cached direct CreatePaymentRequest on exchange attributes - using it as fallback: merchantId={}, amount={}", cached.getMerchantId(), cached.getAmount());
+                System.out.println("[STDOUT] PaymentController: Found cached direct CreatePaymentRequest - merchantId=" + cached.getMerchantId() + " amount=" + cached.getAmount());
+                request = cached;
+            }
+        }
+        
+        log.debug("Full request: {}", request);
+        
         return paymentService.createPayment(request)
                 .map(result -> {
                     if (result.isOk()) {

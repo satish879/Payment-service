@@ -9,10 +9,14 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
+import java.util.Map;
 
 /**
  * REST controller for analytics domain info operations
@@ -22,11 +26,26 @@ import reactor.core.publisher.Mono;
 @Tag(name = "Analytics Domain Info", description = "Analytics domain information operations")
 public class AnalyticsDomainInfoController {
     
-    private final AnalyticsService analyticsService;
+    private static final Logger log = LoggerFactory.getLogger(AnalyticsDomainInfoController.class);
     
-    @Autowired
-    public AnalyticsDomainInfoController(AnalyticsService analyticsService) {
+    private AnalyticsService analyticsService;
+    
+    // Default constructor to allow bean creation even if dependencies are missing
+    public AnalyticsDomainInfoController() {
+        log.warn("AnalyticsDomainInfoController created without dependencies - services will be null");
+    }
+
+    @Autowired(required = false)
+    public void setAnalyticsService(AnalyticsService analyticsService) {
         this.analyticsService = analyticsService;
+    }
+
+    private Mono<ResponseEntity<?>> checkServiceAvailable() {
+        if (analyticsService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(Map.of("error", "Analytics service is not available")));
+        }
+        return null;
     }
     
     /**
@@ -46,8 +65,10 @@ public class AnalyticsDomainInfoController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid domain")
     })
-    public Mono<ResponseEntity<DomainInfoResponse>> getDomainInfo(
+    public Mono<ResponseEntity<?>> getDomainInfo(
             @PathVariable("domain") String domain) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         try {
             AnalyticsDomain analyticsDomain = AnalyticsDomain.fromString(domain);
             return analyticsService.getDomainInfo(analyticsDomain)
@@ -80,9 +101,11 @@ public class AnalyticsDomainInfoController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid domain")
     })
-    public Mono<ResponseEntity<DomainInfoResponse>> getMerchantDomainInfo(
+    public Mono<ResponseEntity<?>> getMerchantDomainInfo(
             @RequestHeader("merchant_id") String merchantId,
             @PathVariable("domain") String domain) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         try {
             AnalyticsDomain analyticsDomain = AnalyticsDomain.fromString(domain);
             return analyticsService.getMerchantDomainInfo(merchantId, analyticsDomain)
@@ -115,9 +138,11 @@ public class AnalyticsDomainInfoController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid domain")
     })
-    public Mono<ResponseEntity<DomainInfoResponse>> getOrgDomainInfo(
+    public Mono<ResponseEntity<?>> getOrgDomainInfo(
             @RequestHeader("org_id") String orgId,
             @PathVariable("domain") String domain) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         try {
             AnalyticsDomain analyticsDomain = AnalyticsDomain.fromString(domain);
             return analyticsService.getOrgDomainInfo(orgId, analyticsDomain)
@@ -150,9 +175,11 @@ public class AnalyticsDomainInfoController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid domain")
     })
-    public Mono<ResponseEntity<DomainInfoResponse>> getProfileDomainInfo(
+    public Mono<ResponseEntity<?>> getProfileDomainInfo(
             @RequestHeader("profile_id") String profileId,
             @PathVariable("domain") String domain) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         try {
             AnalyticsDomain analyticsDomain = AnalyticsDomain.fromString(domain);
             return analyticsService.getProfileDomainInfo(profileId, analyticsDomain)
@@ -185,9 +212,11 @@ public class AnalyticsDomainInfoController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<com.hyperswitch.common.dto.SearchResponse>> globalSearch(
+    public Mono<ResponseEntity<?>> globalSearch(
             @RequestHeader("merchant_id") String merchantId,
             @RequestBody com.hyperswitch.common.dto.SearchRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.globalSearch(merchantId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -215,10 +244,12 @@ public class AnalyticsDomainInfoController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid domain or request")
     })
-    public Mono<ResponseEntity<com.hyperswitch.common.dto.SearchResponse>> domainSearch(
+    public Mono<ResponseEntity<?>> domainSearch(
             @RequestHeader("merchant_id") String merchantId,
             @PathVariable("domain") String domain,
             @RequestBody com.hyperswitch.common.dto.SearchRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         try {
             AnalyticsDomain analyticsDomain = AnalyticsDomain.fromString(domain);
             return analyticsService.domainSearch(merchantId, analyticsDomain, request)

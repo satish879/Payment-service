@@ -46,22 +46,29 @@ public class RoutingServiceImpl implements RoutingService {
 
     private final RoutingConfigRepository routingConfigRepository;
     private final ConnectorSuccessRateRepository successRateRepository;
-    private final AnalyticsService analyticsService;
+    private AnalyticsService analyticsService;
     private final RoutingAlgorithmRepository routingAlgorithmRepository;
     private final DecisionManagerConfigRepository decisionManagerConfigRepository;
 
-    @Autowired
     public RoutingServiceImpl(
             RoutingConfigRepository routingConfigRepository,
             ConnectorSuccessRateRepository successRateRepository,
-            AnalyticsService analyticsService,
             RoutingAlgorithmRepository routingAlgorithmRepository,
             DecisionManagerConfigRepository decisionManagerConfigRepository) {
         this.routingConfigRepository = routingConfigRepository;
         this.successRateRepository = successRateRepository;
-        this.analyticsService = analyticsService;
         this.routingAlgorithmRepository = routingAlgorithmRepository;
         this.decisionManagerConfigRepository = decisionManagerConfigRepository;
+    }
+    
+    @Autowired(required = false)
+    public void setAnalyticsService(AnalyticsService analyticsService) {
+        this.analyticsService = analyticsService;
+        if (analyticsService != null) {
+            log.info("AnalyticsService injected into RoutingServiceImpl");
+        } else {
+            log.warn("AnalyticsService not available - RoutingServiceImpl will use fallback success rate calculation");
+        }
     }
 
     @Override
@@ -137,7 +144,8 @@ public class RoutingServiceImpl implements RoutingService {
                 Connector connector = Connector.valueOf(config.getConnector());
                 
                 // Try to get windowed success rate first (real-time metrics)
-                Mono<BigDecimal> windowedRate = profileId != null
+                // Only if AnalyticsService is available
+                Mono<BigDecimal> windowedRate = (profileId != null && analyticsService != null)
                     ? analyticsService.getWindowedSuccessRate(
                         profileId, config.getConnector(), paymentMethod, currency, windowDurationMinutes)
                     : Mono.just(java.math.BigDecimal.ZERO);

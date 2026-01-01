@@ -37,9 +37,9 @@ public class HealthController {
     
     @PostConstruct
     public void init() {
-        logger.error("=== HealthController BEAN CREATED ===");
-        logger.error("HealthCheckService available: {}", healthCheckService != null);
-        logger.error("Health endpoints registered: /api/health, /api/health/ready, /api/v2/health, /api/v2/health/ready");
+        logger.info("=== HealthController BEAN CREATED ===");
+        logger.info("HealthCheckService available: {}", healthCheckService != null);
+        logger.info("Health endpoints registered: /api/health, /api/health/ready, /api/v2/health, /api/v2/health/ready");
     }
     
     /**

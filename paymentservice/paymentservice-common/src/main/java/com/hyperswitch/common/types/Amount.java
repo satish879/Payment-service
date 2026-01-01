@@ -1,5 +1,7 @@
 package com.hyperswitch.common.types;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
 import java.math.BigDecimal;
 import java.util.Currency;
 import java.util.Objects;
@@ -7,13 +9,29 @@ import java.util.Objects;
 /**
  * Monetary amount with currency
  */
+@JsonDeserialize(using = AmountDeserializer.class)
 public final class Amount {
     private final BigDecimal value;
     private final Currency currency;
 
-    public Amount(BigDecimal value, Currency currency) {
+    // Private constructor for internal use
+    private Amount(BigDecimal value, Currency currency) {
         this.value = value;
         this.currency = currency;
+    }
+
+    // Factory method for programmatic creation (not used by Jackson)
+    // Jackson uses AmountDeserializer instead (configured via @JsonDeserialize)
+    public static Amount create(
+            BigDecimal value,
+            String currencyCode) {
+        if (value == null) {
+            throw new IllegalArgumentException("Amount value cannot be null");
+        }
+        if (currencyCode == null || currencyCode.isEmpty()) {
+            throw new IllegalArgumentException("Currency code cannot be null or empty");
+        }
+        return new Amount(value, Currency.getInstance(currencyCode));
     }
 
     public static Amount of(BigDecimal value, Currency currency) {

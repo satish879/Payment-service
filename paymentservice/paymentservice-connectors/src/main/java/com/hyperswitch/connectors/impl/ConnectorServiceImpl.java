@@ -5,7 +5,6 @@ import com.hyperswitch.connectors.*;
 import com.hyperswitch.common.errors.PaymentError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
@@ -14,8 +13,11 @@ import java.util.stream.Collectors;
 /**
  * Implementation of ConnectorService
  * Manages connector instances and routes calls to appropriate connectors
+ * 
+ * Note: This class is created as a Spring bean via @Bean in ConnectorConfig,
+ * not via @Service annotation, because it requires List<ConnectorInterface>
+ * which is better handled via @Bean configuration.
  */
-@Service
 public class ConnectorServiceImpl implements ConnectorService {
 
     private static final Logger log = LoggerFactory.getLogger(ConnectorServiceImpl.class);

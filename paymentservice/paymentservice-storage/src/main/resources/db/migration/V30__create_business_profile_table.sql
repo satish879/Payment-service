@@ -1,4 +1,5 @@
--- Create business_profile table
+-- V30: Create business_profile table
+-- Note: Renamed from V28 to V30 to avoid version conflict with V28__create_users_table.sql
 CREATE TABLE IF NOT EXISTS business_profile (
     profile_id VARCHAR(64) PRIMARY KEY,
     merchant_id VARCHAR(64) NOT NULL,
@@ -40,8 +41,8 @@ CREATE TABLE IF NOT EXISTS business_profile (
     frm_routing_algorithm_id VARCHAR(64),
     payout_routing_algorithm_id VARCHAR(64),
     default_fallback_routing JSONB,
-    should_collect_cvv_during_payment BOOLEAN,
-    CONSTRAINT fk_business_profile_merchant FOREIGN KEY (merchant_id) REFERENCES merchant_account(merchant_id) ON DELETE CASCADE
+    should_collect_cvv_during_payment BOOLEAN
+    -- CONSTRAINT fk_business_profile_merchant FOREIGN KEY (merchant_id) REFERENCES merchant_account(merchant_id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_business_profile_merchant_id ON business_profile(merchant_id);

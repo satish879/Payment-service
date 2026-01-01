@@ -15,9 +15,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
@@ -73,8 +75,8 @@ public class SchedulerServiceImpl implements SchedulerService {
             ScheduledTaskRepository scheduledTaskRepository,
             PaymentService paymentService,
             ConnectorService connectorService,
-            SubscriptionService subscriptionService,
-            RevenueRecoveryService revenueRecoveryService) {
+            @Lazy SubscriptionService subscriptionService,
+            @Lazy RevenueRecoveryService revenueRecoveryService) {
         this.redisTemplate = redisTemplate;
         this.scheduledTaskRepository = scheduledTaskRepository;
         this.paymentService = paymentService;
@@ -136,6 +138,14 @@ public class SchedulerServiceImpl implements SchedulerService {
         Instant now = Instant.now();
         scheduledTaskRepository
             .findByStatusAndScheduledAtLessThanEqualOrderByScheduledAtAsc(TASK_STATUS_PENDING, now)
+            .onErrorResume(error -> {
+                if (error.getMessage() != null && error.getMessage().contains("does not exist")) {
+                    log.warn("scheduled_task table does not exist yet. Flyway migrations may not have run. Skipping producer loop.");
+                    return Flux.empty();
+                }
+                log.error("Error in producer loop", error);
+                return Flux.empty();
+            })
             .take(batchSize)
             .flatMap(task -> {
                 // Update status to processing
@@ -174,6 +184,14 @@ public class SchedulerServiceImpl implements SchedulerService {
         // In production, this would read from Redis stream with consumer groups
         scheduledTaskRepository
             .findByStatusAndScheduledAtLessThanEqualOrderByScheduledAtAsc(TASK_STATUS_PROCESSING, Instant.now())
+            .onErrorResume(error -> {
+                if (error.getMessage() != null && error.getMessage().contains("does not exist")) {
+                    log.warn("scheduled_task table does not exist yet. Flyway migrations may not have run. Skipping consumer loop.");
+                    return Flux.empty();
+                }
+                log.error("Error in consumer loop", error);
+                return Flux.empty();
+            })
             .take(batchSize)
             .flatMap(task -> {
                 log.debug("Processing task: {}", task.getTaskId());

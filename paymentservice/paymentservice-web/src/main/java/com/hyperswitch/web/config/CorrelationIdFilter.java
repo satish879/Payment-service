@@ -30,8 +30,16 @@ public class CorrelationIdFilter implements WebFilter {
             ? UUID.randomUUID().toString() 
             : correlationIdHeader;
         
-        // Add to response headers
-        exchange.getResponse().getHeaders().add(CORRELATION_ID_HEADER, correlationId);
+        // Add to response headers - use beforeCommit to avoid ReadOnlyHttpHeaders issues in test/mock contexts
+        try {
+            exchange.getResponse().getHeaders().add(CORRELATION_ID_HEADER, correlationId);
+        } catch (UnsupportedOperationException e) {
+            // In some test contexts the headers are read-only until commit; defer addition to beforeCommit
+            exchange.getResponse().beforeCommit(() -> {
+                exchange.getResponse().getHeaders().add(CORRELATION_ID_HEADER, correlationId);
+                return Mono.empty();
+            });
+        }
         
         // Add to MDC for logging
         return chain.filter(exchange)

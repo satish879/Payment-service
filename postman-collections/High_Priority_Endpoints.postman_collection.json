@@ -1,0 +1,774 @@
+{
+	"info": {
+		"name": "Hyperswitch Payment Service - High Priority Endpoints",
+		"description": "Postman collection for high priority (critical) endpoints including payments, customers, payment methods, 3DS, and refunds",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "high-priority-endpoints"
+	},
+	"item": [
+		{
+			"name": "Core Payment Operations",
+			"item": [
+				{
+					"name": "Create Payment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-Merchant-Id",
+								"value": "{{merchant_id}}",
+								"description": "Merchant identifier"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"amount\": {\n    \"value\": 1000,\n    \"currencyCode\": \"USD\"\n  },\n  \"merchantId\": \"{{merchant_id}}\",\n  \"paymentMethod\": \"CARD\",\n  \"customerId\": \"{{customer_id}}\",\n  \"description\": \"Payment for order #12345\",\n  \"captureMethod\": \"AUTOMATIC\",\n  \"confirm\": false,\n  \"metadata\": {}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/payments",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payments"]
+						},
+						"description": "Creates a new payment intent with the specified amount, currency, and payment method. The payment will be in 'requires_confirmation' status until confirmed."
+					},
+					"response": []
+				},
+				{
+					"name": "Confirm Payment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-Merchant-Id",
+								"value": "{{merchant_id}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"paymentMethodId\": \"{{payment_method_id}}\",\n  \"returnUrl\": \"https://example.com/return\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/payments/{{payment_id}}/confirm",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payments", "{{payment_id}}", "confirm"]
+						},
+						"description": "Confirms a payment intent and processes the payment through the selected connector."
+					},
+					"response": []
+				},
+				{
+					"name": "Capture Payment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-Merchant-Id",
+								"value": "{{merchant_id}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"amount\": {\n    \"value\": 1000,\n    \"currencyCode\": \"USD\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/payments/{{payment_id}}/capture",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payments", "{{payment_id}}", "capture"]
+						},
+						"description": "Captures a previously authorized payment. Supports full and partial capture."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Payment",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Merchant-Id",
+								"value": "{{merchant_id}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/payments/{{payment_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payments", "{{payment_id}}"]
+						},
+						"description": "Retrieves payment details by payment ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Payment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-Merchant-Id",
+								"value": "{{merchant_id}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"amount\": {\n    \"value\": 1500,\n    \"currencyCode\": \"USD\"\n  },\n  \"description\": \"Updated payment description\",\n  \"metadata\": {\n    \"order_id\": \"order_123\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/payments/{{payment_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payments", "{{payment_id}}"]
+						},
+						"description": "Updates payment details including amount, description, and metadata."
+					},
+					"response": []
+				},
+				{
+					"name": "Cancel Payment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-Merchant-Id",
+								"value": "{{merchant_id}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"cancellationReason\": \"Customer requested cancellation\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/payments/{{payment_id}}/cancel",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payments", "{{payment_id}}", "cancel"]
+						},
+						"description": "Cancels a payment that is in a cancellable state."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Client Secret",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Merchant-Id",
+								"value": "{{merchant_id}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/payments/{{payment_id}}/client_secret",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payments", "{{payment_id}}", "client_secret"]
+						},
+						"description": "Retrieves the client secret for a payment intent."
+					},
+					"response": []
+				}
+			],
+			"description": "Core payment operations for creating, confirming, capturing, retrieving, updating, and canceling payments."
+		},
+		{
+			"name": "Customer Management",
+			"item": [
+				{
+					"name": "Create Customer",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-Merchant-Id",
+								"value": "{{merchant_id}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"merchantId\": \"{{merchant_id}}\",\n  \"name\": \"John Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"phone\": \"+1234567890\",\n  \"metadata\": {}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/customers",
+							"host": ["{{base_url}}"],
+							"path": ["api", "customers"]
+						},
+						"description": "Creates a new customer with the specified details."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Customer",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Merchant-Id",
+								"value": "{{merchant_id}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/customers/{{customer_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "customers", "{{customer_id}}"]
+						},
+						"description": "Retrieves customer details by customer ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Customer",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-Merchant-Id",
+								"value": "{{merchant_id}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Jane Doe\",\n  \"email\": \"jane.doe@example.com\",\n  \"phone\": \"+1234567890\",\n  \"metadata\": {\n    \"preferences\": \"email\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/customers/{{customer_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "customers", "{{customer_id}}"]
+						},
+						"description": "Updates customer details including name, email, phone, and metadata."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Customer",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "X-Merchant-Id",
+								"value": "{{merchant_id}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/customers/{{customer_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "customers", "{{customer_id}}"]
+						},
+						"description": "Deletes a customer by customer ID."
+					},
+					"response": []
+				},
+				{
+					"name": "List Customers",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Merchant-Id",
+								"value": "{{merchant_id}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/customers?limit=10&offset=0",
+							"host": ["{{base_url}}"],
+							"path": ["api", "customers"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "10",
+									"description": "Number of customers to return"
+								},
+								{
+									"key": "offset",
+									"value": "0",
+									"description": "Number of customers to skip"
+								}
+							]
+						},
+						"description": "Lists customers with pagination support."
+					},
+					"response": []
+				}
+			],
+			"description": "Customer management operations for creating, retrieving, updating, deleting, and listing customers."
+		},
+		{
+			"name": "Payment Method Management",
+			"item": [
+				{
+					"name": "Create Payment Method",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-Merchant-Id",
+								"value": "{{merchant_id}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"customerId\": \"{{customer_id}}\",\n  \"merchantId\": \"{{merchant_id}}\",\n  \"paymentMethodType\": \"CARD\",\n  \"paymentMethodData\": {\n    \"cardNumber\": \"4242424242424242\",\n    \"expiryMonth\": 12,\n    \"expiryYear\": 2025,\n    \"cvc\": \"123\",\n    \"cardholderName\": \"John Doe\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/payment_methods",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payment_methods"]
+						},
+						"description": "Creates a new payment method for a customer. Supports various payment method types including cards, wallets, and bank accounts."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Payment Method",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Merchant-Id",
+								"value": "{{merchant_id}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/payment_methods/{{payment_method_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payment_methods", "{{payment_method_id}}"]
+						},
+						"description": "Retrieves payment method details by payment method ID."
+					},
+					"response": []
+				},
+				{
+					"name": "List Customer Payment Methods",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Merchant-Id",
+								"value": "{{merchant_id}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/customers/{{customer_id}}/payment_methods",
+							"host": ["{{base_url}}"],
+							"path": ["api", "customers", "{{customer_id}}", "payment_methods"]
+						},
+						"description": "Lists all payment methods for a specific customer."
+					},
+					"response": []
+				},
+				{
+					"name": "Set Default Payment Method",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Merchant-Id",
+								"value": "{{merchant_id}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/customers/{{customer_id}}/payment_methods/{{payment_method_id}}/default",
+							"host": ["{{base_url}}"],
+							"path": ["api", "customers", "{{customer_id}}", "payment_methods", "{{payment_method_id}}", "default"]
+						},
+						"description": "Sets a payment method as the default for a customer."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Payment Method",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "X-Merchant-Id",
+								"value": "{{merchant_id}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/payment_methods/{{payment_method_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payment_methods", "{{payment_method_id}}"]
+						},
+						"description": "Deletes a payment method by payment method ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Payment Method by Client Secret",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Merchant-Id",
+								"value": "{{merchant_id}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/payment_methods/client_secret?client_secret={{client_secret}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payment_methods", "client_secret"],
+							"query": [
+								{
+									"key": "client_secret",
+									"value": "{{client_secret}}",
+									"description": "Client secret for the payment method"
+								}
+							]
+						},
+						"description": "Retrieves a payment method using its client secret."
+					},
+					"response": []
+				}
+			],
+			"description": "Payment method management operations for creating, retrieving, updating, and deleting payment methods."
+		},
+		{
+			"name": "3DS Authentication",
+			"item": [
+				{
+					"name": "3DS Challenge",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-Merchant-Id",
+								"value": "{{merchant_id}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"returnUrl\": \"https://example.com/return\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/payments/{{payment_id}}/3ds/challenge",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payments", "{{payment_id}}", "3ds", "challenge"]
+						},
+						"description": "Initiates a 3DS challenge for payment authentication. Returns a redirect URL for customer authentication."
+					},
+					"response": []
+				},
+				{
+					"name": "3DS Resume",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-Merchant-Id",
+								"value": "{{merchant_id}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"authenticationId\": \"auth_123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/payments/{{payment_id}}/3ds/resume",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payments", "{{payment_id}}", "3ds", "resume"]
+						},
+						"description": "Resumes a payment after 3DS authentication is completed."
+					},
+					"response": []
+				},
+				{
+					"name": "3DS Callback",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-Merchant-Id",
+								"value": "{{merchant_id}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"authenticationId\": \"auth_123\",\n  \"status\": \"SUCCEEDED\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/payments/{{payment_id}}/3ds/callback",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payments", "{{payment_id}}", "3ds", "callback"]
+						},
+						"description": "Handles 3DS authentication callback from the payment provider."
+					},
+					"response": []
+				}
+			],
+			"description": "3DS (3D Secure) authentication operations for payment security."
+		},
+		{
+			"name": "Refunds",
+			"item": [
+				{
+					"name": "Create Refund",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-Merchant-Id",
+								"value": "{{merchant_id}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"amount\": {\n    \"value\": 500,\n    \"currencyCode\": \"USD\"\n  },\n  \"reason\": \"Customer requested refund\",\n  \"metadata\": {}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/payments/{{payment_id}}/refund",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payments", "{{payment_id}}", "refund"]
+						},
+						"description": "Creates a refund for a payment. Supports full and partial refunds."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Refund",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Merchant-Id",
+								"value": "{{merchant_id}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/refunds/{{refund_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "refunds", "{{refund_id}}"]
+						},
+						"description": "Retrieves refund details by refund ID."
+					},
+					"response": []
+				},
+				{
+					"name": "List Refunds",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-Merchant-Id",
+								"value": "{{merchant_id}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"limit\": 10,\n  \"offset\": 0,\n  \"status\": \"SUCCEEDED\",\n  \"connector\": \"stripe\",\n  \"currency\": \"USD\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/refunds/list",
+							"host": ["{{base_url}}"],
+							"path": ["api", "refunds", "list"]
+						},
+						"description": "Lists refunds with filtering by status, connector, currency, time range, and amount. Supports pagination."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Refund Filters",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Merchant-Id",
+								"value": "{{merchant_id}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/refunds/filter",
+							"host": ["{{base_url}}"],
+							"path": ["api", "refunds", "filter"]
+						},
+						"description": "Returns available filter options for refunds (connectors, currencies, statuses)."
+					},
+					"response": []
+				},
+				{
+					"name": "Sync Refund",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-Merchant-Id",
+								"value": "{{merchant_id}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"forceSync\": false\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/refunds/sync",
+							"host": ["{{base_url}}"],
+							"path": ["api", "refunds", "sync"]
+						},
+						"description": "Syncs refund status with the connector. Use forceSync=true to force a sync even if recently synced."
+					},
+					"response": []
+				}
+			],
+			"description": "Refund operations for creating, retrieving, listing, and syncing refunds."
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "merchant_id",
+			"value": "merchant_123",
+			"type": "string"
+		},
+		{
+			"key": "customer_id",
+			"value": "cust_123",
+			"type": "string"
+		},
+		{
+			"key": "payment_id",
+			"value": "pay_123",
+			"type": "string"
+		},
+		{
+			"key": "payment_method_id",
+			"value": "pm_123",
+			"type": "string"
+		},
+		{
+			"key": "refund_id",
+			"value": "ref_123",
+			"type": "string"
+		},
+		{
+			"key": "client_secret",
+			"value": "client_secret_123",
+			"type": "string"
+		}
+	]
+}
+

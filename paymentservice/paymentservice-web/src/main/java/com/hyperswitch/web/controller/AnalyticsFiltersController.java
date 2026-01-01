@@ -25,10 +25,14 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
+import java.util.Map;
 
 /**
  * REST controller for analytics filters operations
@@ -38,11 +42,26 @@ import reactor.core.publisher.Mono;
 @Tag(name = "Analytics Filters", description = "Analytics filters operations")
 public class AnalyticsFiltersController {
     
-    private final AnalyticsService analyticsService;
+    private static final Logger log = LoggerFactory.getLogger(AnalyticsFiltersController.class);
     
-    @Autowired
-    public AnalyticsFiltersController(AnalyticsService analyticsService) {
+    private AnalyticsService analyticsService;
+    
+    // Default constructor to allow bean creation even if dependencies are missing
+    public AnalyticsFiltersController() {
+        log.warn("AnalyticsFiltersController created without dependencies - services will be null");
+    }
+
+    @Autowired(required = false)
+    public void setAnalyticsService(AnalyticsService analyticsService) {
         this.analyticsService = analyticsService;
+    }
+
+    private Mono<ResponseEntity<?>> checkServiceAvailable() {
+        if (analyticsService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(Map.of("error", "Analytics service is not available")));
+        }
+        return null;
     }
     
     /**
@@ -62,9 +81,11 @@ public class AnalyticsFiltersController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<PaymentFiltersResponse>> getPaymentFilters(
+    public Mono<ResponseEntity<?>> getPaymentFilters(
             @RequestHeader(value = "merchant_id", required = false) String merchantId,
             @RequestBody PaymentFiltersRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getPaymentFilters(merchantId != null ? merchantId : "default", request)
             .map(result -> {
                 if (result.isOk()) {
@@ -92,9 +113,11 @@ public class AnalyticsFiltersController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<PaymentFiltersResponse>> getMerchantPaymentFilters(
+    public Mono<ResponseEntity<?>> getMerchantPaymentFilters(
             @RequestHeader("merchant_id") String merchantId,
             @RequestBody PaymentFiltersRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getMerchantPaymentFilters(merchantId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -122,9 +145,11 @@ public class AnalyticsFiltersController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<PaymentFiltersResponse>> getOrgPaymentFilters(
+    public Mono<ResponseEntity<?>> getOrgPaymentFilters(
             @RequestHeader("org_id") String orgId,
             @RequestBody PaymentFiltersRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getOrgPaymentFilters(orgId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -152,9 +177,11 @@ public class AnalyticsFiltersController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<PaymentFiltersResponse>> getProfilePaymentFilters(
+    public Mono<ResponseEntity<?>> getProfilePaymentFilters(
             @RequestHeader("profile_id") String profileId,
             @RequestBody PaymentFiltersRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getProfilePaymentFilters(profileId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -182,9 +209,11 @@ public class AnalyticsFiltersController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<PaymentFiltersResponse>> getPaymentFiltersV2(
+    public Mono<ResponseEntity<?>> getPaymentFiltersV2(
             @RequestHeader(value = "merchant_id", required = false) String merchantId,
             @RequestBody PaymentFiltersRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getPaymentFilters(merchantId != null ? merchantId : "default", request)
             .map(result -> {
                 if (result.isOk()) {
@@ -212,9 +241,11 @@ public class AnalyticsFiltersController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<PaymentFiltersResponse>> getMerchantPaymentFiltersV2(
+    public Mono<ResponseEntity<?>> getMerchantPaymentFiltersV2(
             @RequestHeader("merchant_id") String merchantId,
             @RequestBody PaymentFiltersRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getMerchantPaymentFilters(merchantId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -242,9 +273,11 @@ public class AnalyticsFiltersController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<PaymentFiltersResponse>> getOrgPaymentFiltersV2(
+    public Mono<ResponseEntity<?>> getOrgPaymentFiltersV2(
             @RequestHeader("org_id") String orgId,
             @RequestBody PaymentFiltersRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getOrgPaymentFilters(orgId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -272,9 +305,11 @@ public class AnalyticsFiltersController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<PaymentFiltersResponse>> getProfilePaymentFiltersV2(
+    public Mono<ResponseEntity<?>> getProfilePaymentFiltersV2(
             @RequestHeader("profile_id") String profileId,
             @RequestBody PaymentFiltersRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getProfilePaymentFilters(profileId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -302,9 +337,11 @@ public class AnalyticsFiltersController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<PaymentIntentFiltersResponse>> getPaymentIntentFilters(
+    public Mono<ResponseEntity<?>> getPaymentIntentFilters(
             @RequestHeader(value = "merchant_id", required = false) String merchantId,
             @RequestBody PaymentIntentFiltersRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getPaymentIntentFilters(merchantId != null ? merchantId : "default", request)
             .map(result -> {
                 if (result.isOk()) {
@@ -332,9 +369,11 @@ public class AnalyticsFiltersController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<RefundFiltersResponse>> getRefundFilters(
+    public Mono<ResponseEntity<?>> getRefundFilters(
             @RequestHeader(value = "merchant_id", required = false) String merchantId,
             @RequestBody RefundFiltersRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getRefundFilters(merchantId != null ? merchantId : "default", request)
             .map(result -> {
                 if (result.isOk()) {
@@ -362,9 +401,11 @@ public class AnalyticsFiltersController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<RefundFiltersResponse>> getMerchantRefundFilters(
+    public Mono<ResponseEntity<?>> getMerchantRefundFilters(
             @RequestHeader("merchant_id") String merchantId,
             @RequestBody RefundFiltersRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getMerchantRefundFilters(merchantId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -392,9 +433,11 @@ public class AnalyticsFiltersController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<RefundFiltersResponse>> getOrgRefundFilters(
+    public Mono<ResponseEntity<?>> getOrgRefundFilters(
             @RequestHeader("org_id") String orgId,
             @RequestBody RefundFiltersRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getOrgRefundFilters(orgId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -422,9 +465,11 @@ public class AnalyticsFiltersController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<RefundFiltersResponse>> getProfileRefundFilters(
+    public Mono<ResponseEntity<?>> getProfileRefundFilters(
             @RequestHeader("profile_id") String profileId,
             @RequestBody RefundFiltersRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getProfileRefundFilters(profileId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -452,9 +497,11 @@ public class AnalyticsFiltersController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<RoutingFiltersResponse>> getRoutingFilters(
+    public Mono<ResponseEntity<?>> getRoutingFilters(
             @RequestHeader(value = "merchant_id", required = false) String merchantId,
             @RequestBody RoutingFiltersRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getRoutingFilters(merchantId != null ? merchantId : "default", request)
             .map(result -> {
                 if (result.isOk()) {
@@ -482,9 +529,11 @@ public class AnalyticsFiltersController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<RoutingFiltersResponse>> getMerchantRoutingFilters(
+    public Mono<ResponseEntity<?>> getMerchantRoutingFilters(
             @RequestHeader("merchant_id") String merchantId,
             @RequestBody RoutingFiltersRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getMerchantRoutingFilters(merchantId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -512,9 +561,11 @@ public class AnalyticsFiltersController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<RoutingFiltersResponse>> getOrgRoutingFilters(
+    public Mono<ResponseEntity<?>> getOrgRoutingFilters(
             @RequestHeader("org_id") String orgId,
             @RequestBody RoutingFiltersRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getOrgRoutingFilters(orgId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -542,9 +593,11 @@ public class AnalyticsFiltersController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<RoutingFiltersResponse>> getProfileRoutingFilters(
+    public Mono<ResponseEntity<?>> getProfileRoutingFilters(
             @RequestHeader("profile_id") String profileId,
             @RequestBody RoutingFiltersRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getProfileRoutingFilters(profileId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -572,9 +625,11 @@ public class AnalyticsFiltersController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<AuthEventFiltersResponse>> getAuthEventFilters(
+    public Mono<ResponseEntity<?>> getAuthEventFilters(
             @RequestHeader(value = "merchant_id", required = false) String merchantId,
             @RequestBody AuthEventFiltersRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getAuthEventFilters(merchantId != null ? merchantId : "default", request)
             .map(result -> {
                 if (result.isOk()) {
@@ -602,9 +657,11 @@ public class AnalyticsFiltersController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<AuthEventFiltersResponse>> getMerchantAuthEventFilters(
+    public Mono<ResponseEntity<?>> getMerchantAuthEventFilters(
             @RequestHeader("merchant_id") String merchantId,
             @RequestBody AuthEventFiltersRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getMerchantAuthEventFilters(merchantId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -632,9 +689,11 @@ public class AnalyticsFiltersController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<AuthEventFiltersResponse>> getOrgAuthEventFilters(
+    public Mono<ResponseEntity<?>> getOrgAuthEventFilters(
             @RequestHeader("org_id") String orgId,
             @RequestBody AuthEventFiltersRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getOrgAuthEventFilters(orgId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -662,9 +721,11 @@ public class AnalyticsFiltersController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<AuthEventFiltersResponse>> getProfileAuthEventFilters(
+    public Mono<ResponseEntity<?>> getProfileAuthEventFilters(
             @RequestHeader("profile_id") String profileId,
             @RequestBody AuthEventFiltersRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getProfileAuthEventFilters(profileId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -692,9 +753,11 @@ public class AnalyticsFiltersController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<SdkEventFiltersResponse>> getSdkEventFilters(
+    public Mono<ResponseEntity<?>> getSdkEventFilters(
             @RequestHeader(value = "merchant_id", required = false) String merchantId,
             @RequestBody SdkEventFiltersRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getSdkEventFilters(merchantId != null ? merchantId : "default", request)
             .map(result -> {
                 if (result.isOk()) {
@@ -722,9 +785,11 @@ public class AnalyticsFiltersController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<FrmFiltersResponse>> getFrmFilters(
+    public Mono<ResponseEntity<?>> getFrmFilters(
             @RequestHeader(value = "merchant_id", required = false) String merchantId,
             @RequestBody FrmFiltersRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getFrmFilters(merchantId != null ? merchantId : "default", request)
             .map(result -> {
                 if (result.isOk()) {
@@ -752,9 +817,11 @@ public class AnalyticsFiltersController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<DisputeFiltersResponse>> getDisputeFilters(
+    public Mono<ResponseEntity<?>> getDisputeFilters(
             @RequestHeader(value = "merchant_id", required = false) String merchantId,
             @RequestBody DisputeFiltersRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getDisputeFilters(merchantId != null ? merchantId : "default", request)
             .map(result -> {
                 if (result.isOk()) {
@@ -782,9 +849,11 @@ public class AnalyticsFiltersController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<DisputeFiltersResponse>> getMerchantDisputeFilters(
+    public Mono<ResponseEntity<?>> getMerchantDisputeFilters(
             @RequestHeader("merchant_id") String merchantId,
             @RequestBody DisputeFiltersRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getMerchantDisputeFilters(merchantId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -812,9 +881,11 @@ public class AnalyticsFiltersController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<DisputeFiltersResponse>> getOrgDisputeFilters(
+    public Mono<ResponseEntity<?>> getOrgDisputeFilters(
             @RequestHeader("org_id") String orgId,
             @RequestBody DisputeFiltersRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getOrgDisputeFilters(orgId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -842,9 +913,11 @@ public class AnalyticsFiltersController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<DisputeFiltersResponse>> getProfileDisputeFilters(
+    public Mono<ResponseEntity<?>> getProfileDisputeFilters(
             @RequestHeader("profile_id") String profileId,
             @RequestBody DisputeFiltersRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getProfileDisputeFilters(profileId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -872,9 +945,11 @@ public class AnalyticsFiltersController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<ApiEventFiltersResponse>> getApiEventFilters(
+    public Mono<ResponseEntity<?>> getApiEventFilters(
             @RequestHeader(value = "merchant_id", required = false) String merchantId,
             @RequestBody ApiEventFiltersRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getApiEventFilters(merchantId != null ? merchantId : "default", request)
             .map(result -> {
                 if (result.isOk()) {
@@ -902,9 +977,11 @@ public class AnalyticsFiltersController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<ApiEventFiltersResponse>> getMerchantApiEventFilters(
+    public Mono<ResponseEntity<?>> getMerchantApiEventFilters(
             @RequestHeader("merchant_id") String merchantId,
             @RequestBody ApiEventFiltersRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getMerchantApiEventFilters(merchantId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -932,9 +1009,11 @@ public class AnalyticsFiltersController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<ApiEventFiltersResponse>> getOrgApiEventFilters(
+    public Mono<ResponseEntity<?>> getOrgApiEventFilters(
             @RequestHeader("org_id") String orgId,
             @RequestBody ApiEventFiltersRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getOrgApiEventFilters(orgId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -962,9 +1041,11 @@ public class AnalyticsFiltersController {
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<ApiEventFiltersResponse>> getProfileApiEventFilters(
+    public Mono<ResponseEntity<?>> getProfileApiEventFilters(
             @RequestHeader("profile_id") String profileId,
             @RequestBody ApiEventFiltersRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getProfileApiEventFilters(profileId, request)
             .map(result -> {
                 if (result.isOk()) {

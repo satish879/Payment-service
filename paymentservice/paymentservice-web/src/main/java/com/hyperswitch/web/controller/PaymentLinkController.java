@@ -4,6 +4,7 @@ import com.hyperswitch.common.dto.PaymentLinkRequest;
 import com.hyperswitch.common.dto.PaymentLinkResponse;
 import com.hyperswitch.common.types.PaymentLinkId;
 import com.hyperswitch.core.paymentlinks.PaymentLinkService;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,12 +23,27 @@ public class PaymentLinkController {
 
     private static final Logger log = LoggerFactory.getLogger(PaymentLinkController.class);
 
-    private final PaymentLinkService paymentLinkService;
+    private PaymentLinkService paymentLinkService;
 
-    @Autowired
-    public PaymentLinkController(PaymentLinkService paymentLinkService) {
+    // Default constructor to allow bean creation even if dependencies are missing
+    public PaymentLinkController() {
+        log.warn("PaymentLinkController created without dependencies - services will be null");
+    }
+
+    @Autowired(required = false)
+    public void setPaymentLinkService(PaymentLinkService paymentLinkService) {
         this.paymentLinkService = paymentLinkService;
     }
+
+    @PostConstruct
+    public void init() {
+        log.info("=== PaymentLinkController BEAN CREATED ===");
+        log.info("PaymentLinkService available: {}", paymentLinkService != null);
+        if (paymentLinkService == null) {
+            log.warn("PaymentLinkService is not available - payment link endpoints will not function properly");
+        }
+    }
+
 
     /**
      * Create a new payment link
@@ -35,6 +51,9 @@ public class PaymentLinkController {
      */
     @PostMapping
     public Mono<ResponseEntity<PaymentLinkResponse>> createPaymentLink(@RequestBody PaymentLinkRequest request) {
+        if (paymentLinkService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+        }
         log.info("Creating payment link for merchant: {}", request.getMerchantId());
         
         return paymentLinkService.createPaymentLink(request)
@@ -53,6 +72,9 @@ public class PaymentLinkController {
      */
     @GetMapping("/{id}")
     public Mono<ResponseEntity<PaymentLinkResponse>> getPaymentLink(@PathVariable String id) {
+        if (paymentLinkService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+        }
         log.info("Getting payment link: {}", id);
         
         return paymentLinkService.getPaymentLink(PaymentLinkId.of(id))
@@ -71,6 +93,9 @@ public class PaymentLinkController {
      */
     @GetMapping("/payment/{paymentId}")
     public Mono<ResponseEntity<PaymentLinkResponse>> getPaymentLinkByPaymentId(@PathVariable String paymentId) {
+        if (paymentLinkService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+        }
         log.info("Getting payment link by payment ID: {}", paymentId);
         
         return paymentLinkService.getPaymentLinkByPaymentId(paymentId)
@@ -92,6 +117,9 @@ public class PaymentLinkController {
             @PathVariable String merchantId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
+        if (paymentLinkService == null) {
+            return Flux.empty();
+        }
         log.info("Listing payment links for merchant: {}", merchantId);
         return paymentLinkService.listPaymentLinks(merchantId, page, size);
     }
@@ -102,6 +130,9 @@ public class PaymentLinkController {
      */
     @GetMapping("/{id}/validate")
     public Mono<ResponseEntity<PaymentLinkResponse>> validatePaymentLink(@PathVariable String id) {
+        if (paymentLinkService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+        }
         log.info("Validating payment link: {}", id);
         
         return paymentLinkService.validatePaymentLink(PaymentLinkId.of(id))

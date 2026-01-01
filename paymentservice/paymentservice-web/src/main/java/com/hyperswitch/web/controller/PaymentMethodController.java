@@ -16,6 +16,9 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,11 +34,27 @@ import reactor.core.publisher.Mono;
 @Tag(name = "Payment Methods", description = "Payment method management operations including creation, retrieval, update, and network token status checks")
 public class PaymentMethodController {
 
-    private final PaymentMethodService paymentMethodService;
+    private static final Logger log = LoggerFactory.getLogger(PaymentMethodController.class);
 
-    @Autowired
-    public PaymentMethodController(PaymentMethodService paymentMethodService) {
+    private PaymentMethodService paymentMethodService;
+
+    // Default constructor to allow bean creation even if dependencies are missing
+    public PaymentMethodController() {
+        log.warn("PaymentMethodController created without dependencies - services will be null");
+    }
+
+    @Autowired(required = false)
+    public void setPaymentMethodService(PaymentMethodService paymentMethodService) {
         this.paymentMethodService = paymentMethodService;
+    }
+
+    @PostConstruct
+    public void init() {
+        log.info("=== PaymentMethodController BEAN CREATED ===");
+        log.info("PaymentMethodService available: {}", paymentMethodService != null);
+        if (paymentMethodService == null) {
+            log.warn("PaymentMethodService is not available - payment method endpoints will not function properly");
+        }
     }
 
     /**
@@ -87,6 +106,9 @@ public class PaymentMethodController {
     public Mono<ResponseEntity<PaymentMethodResponse>> createPaymentMethod(
             @Parameter(description = "Payment method creation request", required = true)
             @RequestBody PaymentMethodRequest request) {
+        if (paymentMethodService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+        }
         return paymentMethodService.createPaymentMethod(request)
             .map(result -> {
                 if (result.isOk()) {
@@ -110,6 +132,9 @@ public class PaymentMethodController {
     public Mono<ResponseEntity<PaymentMethodResponse>> getPaymentMethod(
             @Parameter(description = "Payment method ID", required = true)
             @PathVariable String id) {
+        if (paymentMethodService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+        }
         PaymentMethodId paymentMethodId = PaymentMethodId.of(id);
         return paymentMethodService.getPaymentMethod(paymentMethodId)
             .map(result -> {
@@ -128,6 +153,9 @@ public class PaymentMethodController {
     @GetMapping("/customers/{customerId}/payment_methods")
     public Mono<ResponseEntity<Flux<PaymentMethodResponse>>> listCustomerPaymentMethods(
             @PathVariable String customerId) {
+        if (paymentMethodService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+        }
         CustomerId customerIdObj = CustomerId.of(customerId);
         return paymentMethodService.listCustomerPaymentMethods(customerIdObj)
             .map(result -> {
@@ -147,6 +175,9 @@ public class PaymentMethodController {
     public Mono<ResponseEntity<Void>> setDefaultPaymentMethod(
             @PathVariable String customerId,
             @PathVariable String paymentMethodId) {
+        if (paymentMethodService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+        }
         CustomerId customerIdObj = CustomerId.of(customerId);
         PaymentMethodId paymentMethodIdObj = PaymentMethodId.of(paymentMethodId);
         return paymentMethodService.setDefaultPaymentMethod(customerIdObj, paymentMethodIdObj)
@@ -165,6 +196,9 @@ public class PaymentMethodController {
      */
     @DeleteMapping("/{id}")
     public Mono<ResponseEntity<Void>> deletePaymentMethod(@PathVariable String id) {
+        if (paymentMethodService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+        }
         PaymentMethodId paymentMethodId = PaymentMethodId.of(id);
         return paymentMethodService.deletePaymentMethod(paymentMethodId)
             .map(result -> {
@@ -192,6 +226,9 @@ public class PaymentMethodController {
     public Mono<ResponseEntity<PaymentMethodResponse>> getPaymentMethodByClientSecret(
             @Parameter(description = "Client secret", required = true)
             @RequestParam("client_secret") String clientSecret) {
+        if (paymentMethodService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+        }
         return paymentMethodService.getPaymentMethodByClientSecret(clientSecret)
             .map(result -> {
                 if (result.isOk()) {
@@ -220,6 +257,9 @@ public class PaymentMethodController {
             @PathVariable String id,
             @Parameter(description = "Payment method update request", required = true)
             @RequestBody PaymentMethodRequest request) {
+        if (paymentMethodService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+        }
         PaymentMethodId paymentMethodId = PaymentMethodId.of(id);
         return paymentMethodService.updatePaymentMethod(paymentMethodId, request)
             .map(result -> {
@@ -251,6 +291,9 @@ public class PaymentMethodController {
     public Mono<ResponseEntity<NetworkTokenStatusResponse>> checkNetworkTokenStatus(
             @Parameter(description = "Payment method ID", required = true)
             @PathVariable String id) {
+        if (paymentMethodService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+        }
         PaymentMethodId paymentMethodId = PaymentMethodId.of(id);
         return paymentMethodService.checkNetworkTokenStatus(paymentMethodId)
             .map(result -> {
@@ -281,6 +324,9 @@ public class PaymentMethodController {
     public Mono<ResponseEntity<com.hyperswitch.common.dto.TokenizeCardResponse>> tokenizeCard(
             @Parameter(description = "Card tokenization request", required = true)
             @RequestBody com.hyperswitch.common.dto.TokenizeCardRequest request) {
+        if (paymentMethodService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+        }
         return paymentMethodService.tokenizeCard(request)
             .map(result -> {
                 if (result.isOk()) {
@@ -310,6 +356,9 @@ public class PaymentMethodController {
             @RequestHeader("X-Merchant-Id") String merchantId,
             @RequestParam(required = false) String customerId,
             @RequestParam(required = false) String paymentMethodType) {
+        if (paymentMethodService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+        }
         return paymentMethodService.listPaymentMethods(merchantId, customerId, paymentMethodType)
             .map(result -> {
                 if (result.isOk()) {
@@ -340,6 +389,9 @@ public class PaymentMethodController {
             @RequestHeader("X-Merchant-Id") String merchantId,
             @Parameter(description = "Payment method ID", required = true)
             @PathVariable String id) {
+        if (paymentMethodService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+        }
         return paymentMethodService.getPaymentMethodToken(
                 com.hyperswitch.common.types.PaymentMethodId.of(id), merchantId)
             .map(result -> {
@@ -370,6 +422,9 @@ public class PaymentMethodController {
     public Mono<ResponseEntity<com.hyperswitch.common.dto.PaymentMethodFilterResponse>> getPaymentMethodFilters(
             @RequestHeader("X-Merchant-Id") String merchantId,
             @RequestParam(required = false) String connector) {
+        if (paymentMethodService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+        }
         return paymentMethodService.getPaymentMethodFilters(merchantId, connector)
             .map(result -> {
                 if (result.isOk()) {
@@ -403,6 +458,9 @@ public class PaymentMethodController {
     public Mono<ResponseEntity<PaymentMethodResponse>> migratePaymentMethod(
             @RequestHeader("X-Merchant-Id") String merchantId,
             @RequestBody com.hyperswitch.common.dto.PaymentMethodMigrateRequest request) {
+        if (paymentMethodService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+        }
         return paymentMethodService.migratePaymentMethod(merchantId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -432,6 +490,9 @@ public class PaymentMethodController {
     public Mono<ResponseEntity<com.hyperswitch.common.dto.PaymentMethodBatchMigrateResponse>> batchMigratePaymentMethods(
             @RequestHeader("X-Merchant-Id") String merchantId,
             @RequestBody com.hyperswitch.common.dto.PaymentMethodBatchMigrateRequest request) {
+        if (paymentMethodService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+        }
         return paymentMethodService.batchMigratePaymentMethods(merchantId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -461,6 +522,9 @@ public class PaymentMethodController {
     public Mono<ResponseEntity<com.hyperswitch.common.dto.PaymentMethodBatchUpdateResponse>> batchUpdatePaymentMethods(
             @RequestHeader("X-Merchant-Id") String merchantId,
             @RequestBody com.hyperswitch.common.dto.PaymentMethodBatchUpdateRequest request) {
+        if (paymentMethodService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+        }
         return paymentMethodService.batchUpdatePaymentMethods(merchantId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -490,6 +554,9 @@ public class PaymentMethodController {
     public Mono<ResponseEntity<com.hyperswitch.common.dto.BatchTokenizeCardResponse>> batchTokenizeCards(
             @RequestHeader("X-Merchant-Id") String merchantId,
             @RequestBody com.hyperswitch.common.dto.BatchTokenizeCardRequest request) {
+        if (paymentMethodService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+        }
         return paymentMethodService.batchTokenizeCards(merchantId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -519,6 +586,9 @@ public class PaymentMethodController {
     public Mono<ResponseEntity<com.hyperswitch.common.dto.PaymentMethodCollectLinkResponse>> initiatePaymentMethodCollectLink(
             @RequestHeader("X-Merchant-Id") String merchantId,
             @RequestBody com.hyperswitch.common.dto.PaymentMethodCollectLinkRequest request) {
+        if (paymentMethodService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+        }
         return paymentMethodService.initiatePaymentMethodCollectLink(merchantId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -554,6 +624,9 @@ public class PaymentMethodController {
             @PathVariable("merchant_id") String merchantId,
             @Parameter(description = "Collect link ID", required = true)
             @PathVariable("pm_collect_link_id") String collectLinkId) {
+        if (paymentMethodService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+        }
         return paymentMethodService.renderPaymentMethodCollectLink(merchantId, collectLinkId)
             .map(result -> {
                 if (result.isOk()) {
@@ -589,6 +662,9 @@ public class PaymentMethodController {
     public Mono<ResponseEntity<PaymentMethodResponse>> createPaymentMethodIntent(
             @RequestHeader("X-Merchant-Id") String merchantId,
             @RequestBody com.hyperswitch.common.dto.PaymentMethodIntentCreateRequest request) {
+        if (paymentMethodService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+        }
         return paymentMethodService.createPaymentMethodIntent(merchantId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -628,6 +704,9 @@ public class PaymentMethodController {
             @Parameter(description = "Payment method ID", required = true)
             @PathVariable("id") String paymentMethodId,
             @RequestBody com.hyperswitch.common.dto.PaymentMethodIntentConfirmRequest request) {
+        if (paymentMethodService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+        }
         return paymentMethodService.confirmPaymentMethodIntent(merchantId, paymentMethodId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -663,6 +742,9 @@ public class PaymentMethodController {
             @Parameter(description = "Payment method ID", required = true)
             @PathVariable("payment_method_id") String paymentMethodId,
             @RequestBody com.hyperswitch.common.dto.TokenizeCardRequest request) {
+        if (paymentMethodService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+        }
         return paymentMethodService.tokenizeCardUsingPaymentMethod(
                 merchantId, 
                 com.hyperswitch.common.types.PaymentMethodId.of(paymentMethodId),
@@ -701,6 +783,9 @@ public class PaymentMethodController {
             @Parameter(description = "Payment method ID", required = true)
             @PathVariable("payment_method_id") String paymentMethodId,
             @RequestBody PaymentMethodRequest request) {
+        if (paymentMethodService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+        }
         return paymentMethodService.updatePaymentMethodV1(
                 merchantId,
                 com.hyperswitch.common.types.PaymentMethodId.of(paymentMethodId),
@@ -738,6 +823,9 @@ public class PaymentMethodController {
             @RequestHeader("X-Merchant-Id") String merchantId,
             @Parameter(description = "Payment method ID", required = true)
             @PathVariable("payment_method_id") String paymentMethodId) {
+        if (paymentMethodService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+        }
         return paymentMethodService.savePaymentMethod(
                 merchantId,
                 com.hyperswitch.common.types.PaymentMethodId.of(paymentMethodId))
@@ -769,6 +857,9 @@ public class PaymentMethodController {
     public Mono<ResponseEntity<com.hyperswitch.common.dto.PaymentMethodAuthLinkResponse>> createPaymentMethodAuthLink(
             @RequestHeader("X-Merchant-Id") String merchantId,
             @RequestBody com.hyperswitch.common.dto.PaymentMethodAuthLinkRequest request) {
+        if (paymentMethodService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+        }
         return paymentMethodService.createPaymentMethodAuthLink(merchantId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -798,6 +889,9 @@ public class PaymentMethodController {
     public Mono<ResponseEntity<com.hyperswitch.common.dto.PaymentMethodAuthExchangeResponse>> exchangePaymentMethodAuthToken(
             @RequestHeader("X-Merchant-Id") String merchantId,
             @RequestBody com.hyperswitch.common.dto.PaymentMethodAuthExchangeRequest request) {
+        if (paymentMethodService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+        }
         return paymentMethodService.exchangePaymentMethodAuthToken(merchantId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -833,6 +927,9 @@ public class PaymentMethodController {
             @Parameter(description = "Payment method ID", required = true)
             @PathVariable("payment_method_id") String paymentMethodId,
             @RequestBody com.hyperswitch.common.dto.GetTokenDataRequest request) {
+        if (paymentMethodService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+        }
         return paymentMethodService.getPaymentMethodTokenData(
                 merchantId,
                 com.hyperswitch.common.types.PaymentMethodId.of(paymentMethodId),

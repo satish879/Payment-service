@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
-import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -20,8 +19,8 @@ import java.util.Map;
 
 /**
  * Implementation of HealthCheckService
+ * Note: This is created via @Bean in HealthCheckConfig, not via @Service
  */
-@Service
 public class HealthCheckServiceImpl implements HealthCheckService {
     
     private static final Logger log = LoggerFactory.getLogger(HealthCheckServiceImpl.class);

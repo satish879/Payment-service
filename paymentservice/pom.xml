@@ -21,11 +21,11 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         
         <!-- Spring Boot Version -->
-        <spring-boot.version>3.4.1</spring-boot.version>
+        <spring-boot.version>4.0.1</spring-boot.version>
         
         <!-- Dependency Versions -->
-        <spring-data-r2dbc.version>3.4.1</spring-data-r2dbc.version>
-        <spring-data-redis-reactive.version>3.4.1</spring-data-redis-reactive.version>
+        <spring-data-r2dbc.version>4.0.1</spring-data-r2dbc.version>
+        <spring-data-redis-reactive.version>4.0.1</spring-data-redis-reactive.version>
         <micrometer.version>1.15.1</micrometer.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <vavr.version>0.10.4</vavr.version>
@@ -34,6 +34,8 @@
         <testcontainers.version>1.20.4</testcontainers.version>
         <wiremock.version>3.9.1</wiremock.version>
         <assertj.version>3.26.3</assertj.version>
+        <!-- ASM version that supports Java 25 (class file version 69) -->
+        <asm.version>9.8</asm.version>
     </properties>
 
     <modules>
@@ -149,6 +151,23 @@
                 <version>${testcontainers.version}</version>
             </dependency>
 
+            <!-- ASM for Java 25 support -->
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm</artifactId>
+                <version>${asm.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm-commons</artifactId>
+                <version>${asm.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm-tree</artifactId>
+                <version>${asm.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -178,6 +197,7 @@
                         <release>25</release>
                         <fork>true</fork>
                         <compilerArgs>
+                            <arg>-parameters</arg>
                             <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</arg>
                             <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED</arg>
                             <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>

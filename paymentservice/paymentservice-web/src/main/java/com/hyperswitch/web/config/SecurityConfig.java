@@ -38,8 +38,8 @@ public class SecurityConfig {
 
     @PostConstruct
     public void init() {
-        logger.error("=== SecurityConfig BEAN CREATED ===");
-        logger.error("enableAuth: {}, enableCsrf: {}", enableAuth, enableCsrf);
+        logger.info("=== SecurityConfig BEAN CREATED ===");
+        logger.info("enableAuth: {}, enableCsrf: {}", enableAuth, enableCsrf);
     }
 
     @Bean

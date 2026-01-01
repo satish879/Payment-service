@@ -18,10 +18,14 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
+import java.util.Map;
 
 /**
  * Controller for analytics report generation endpoints
@@ -31,11 +35,26 @@ import reactor.core.publisher.Mono;
 @Tag(name = "Analytics Reports", description = "Analytics report generation operations")
 public class AnalyticsReportsController {
 
-    private final AnalyticsService analyticsService;
+    private static final Logger log = LoggerFactory.getLogger(AnalyticsReportsController.class);
 
-    @Autowired
-    public AnalyticsReportsController(AnalyticsService analyticsService) {
+    private AnalyticsService analyticsService;
+
+    // Default constructor to allow bean creation even if dependencies are missing
+    public AnalyticsReportsController() {
+        log.warn("AnalyticsReportsController created without dependencies - services will be null");
+    }
+
+    @Autowired(required = false)
+    public void setAnalyticsService(AnalyticsService analyticsService) {
         this.analyticsService = analyticsService;
+    }
+
+    private Mono<ResponseEntity<?>> checkServiceAvailable() {
+        if (analyticsService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(Map.of("error", "Analytics service is not available")));
+        }
+        return null;
     }
 
     // Dispute Reports
@@ -46,9 +65,11 @@ public class AnalyticsReportsController {
             content = @Content(schema = @Schema(implementation = DisputeReportResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<DisputeReportResponse>> generateDisputeReport(
+    public Mono<ResponseEntity<?>> generateDisputeReport(
             @RequestHeader(value = "merchant_id", required = false) String merchantId,
             @RequestBody DisputeReportRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.generateDisputeReport(
                 merchantId != null ? merchantId : "default", request)
             .map(result -> {
@@ -67,9 +88,11 @@ public class AnalyticsReportsController {
             content = @Content(schema = @Schema(implementation = DisputeReportResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<DisputeReportResponse>> generateMerchantDisputeReport(
+    public Mono<ResponseEntity<?>> generateMerchantDisputeReport(
             @RequestHeader("merchant_id") String merchantId,
             @RequestBody DisputeReportRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.generateMerchantDisputeReport(merchantId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -87,9 +110,11 @@ public class AnalyticsReportsController {
             content = @Content(schema = @Schema(implementation = DisputeReportResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<DisputeReportResponse>> generateOrgDisputeReport(
+    public Mono<ResponseEntity<?>> generateOrgDisputeReport(
             @RequestHeader("org_id") String orgId,
             @RequestBody DisputeReportRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.generateOrgDisputeReport(orgId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -107,9 +132,11 @@ public class AnalyticsReportsController {
             content = @Content(schema = @Schema(implementation = DisputeReportResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<DisputeReportResponse>> generateProfileDisputeReport(
+    public Mono<ResponseEntity<?>> generateProfileDisputeReport(
             @RequestHeader("profile_id") String profileId,
             @RequestBody DisputeReportRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.generateProfileDisputeReport(profileId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -128,9 +155,11 @@ public class AnalyticsReportsController {
             content = @Content(schema = @Schema(implementation = RefundReportResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<RefundReportResponse>> generateRefundReport(
+    public Mono<ResponseEntity<?>> generateRefundReport(
             @RequestHeader(value = "merchant_id", required = false) String merchantId,
             @RequestBody RefundReportRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.generateRefundReport(
                 merchantId != null ? merchantId : "default", request)
             .map(result -> {
@@ -149,9 +178,11 @@ public class AnalyticsReportsController {
             content = @Content(schema = @Schema(implementation = RefundReportResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<RefundReportResponse>> generateMerchantRefundReport(
+    public Mono<ResponseEntity<?>> generateMerchantRefundReport(
             @RequestHeader("merchant_id") String merchantId,
             @RequestBody RefundReportRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.generateMerchantRefundReport(merchantId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -169,9 +200,11 @@ public class AnalyticsReportsController {
             content = @Content(schema = @Schema(implementation = RefundReportResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<RefundReportResponse>> generateOrgRefundReport(
+    public Mono<ResponseEntity<?>> generateOrgRefundReport(
             @RequestHeader("org_id") String orgId,
             @RequestBody RefundReportRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.generateOrgRefundReport(orgId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -189,9 +222,11 @@ public class AnalyticsReportsController {
             content = @Content(schema = @Schema(implementation = RefundReportResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<RefundReportResponse>> generateProfileRefundReport(
+    public Mono<ResponseEntity<?>> generateProfileRefundReport(
             @RequestHeader("profile_id") String profileId,
             @RequestBody RefundReportRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.generateProfileRefundReport(profileId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -210,9 +245,11 @@ public class AnalyticsReportsController {
             content = @Content(schema = @Schema(implementation = PaymentReportResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<PaymentReportResponse>> generatePaymentReport(
+    public Mono<ResponseEntity<?>> generatePaymentReport(
             @RequestHeader(value = "merchant_id", required = false) String merchantId,
             @RequestBody PaymentReportRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.generatePaymentReport(
                 merchantId != null ? merchantId : "default", request)
             .map(result -> {
@@ -231,9 +268,11 @@ public class AnalyticsReportsController {
             content = @Content(schema = @Schema(implementation = PaymentReportResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<PaymentReportResponse>> generateMerchantPaymentReport(
+    public Mono<ResponseEntity<?>> generateMerchantPaymentReport(
             @RequestHeader("merchant_id") String merchantId,
             @RequestBody PaymentReportRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.generateMerchantPaymentReport(merchantId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -251,9 +290,11 @@ public class AnalyticsReportsController {
             content = @Content(schema = @Schema(implementation = PaymentReportResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<PaymentReportResponse>> generateOrgPaymentReport(
+    public Mono<ResponseEntity<?>> generateOrgPaymentReport(
             @RequestHeader("org_id") String orgId,
             @RequestBody PaymentReportRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.generateOrgPaymentReport(orgId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -271,9 +312,11 @@ public class AnalyticsReportsController {
             content = @Content(schema = @Schema(implementation = PaymentReportResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<PaymentReportResponse>> generateProfilePaymentReport(
+    public Mono<ResponseEntity<?>> generateProfilePaymentReport(
             @RequestHeader("profile_id") String profileId,
             @RequestBody PaymentReportRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.generateProfilePaymentReport(profileId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -292,9 +335,11 @@ public class AnalyticsReportsController {
             content = @Content(schema = @Schema(implementation = PayoutReportResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<PayoutReportResponse>> generatePayoutReport(
+    public Mono<ResponseEntity<?>> generatePayoutReport(
             @RequestHeader(value = "merchant_id", required = false) String merchantId,
             @RequestBody PayoutReportRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.generatePayoutReport(
                 merchantId != null ? merchantId : "default", request)
             .map(result -> {
@@ -313,9 +358,11 @@ public class AnalyticsReportsController {
             content = @Content(schema = @Schema(implementation = PayoutReportResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<PayoutReportResponse>> generateMerchantPayoutReport(
+    public Mono<ResponseEntity<?>> generateMerchantPayoutReport(
             @RequestHeader("merchant_id") String merchantId,
             @RequestBody PayoutReportRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.generateMerchantPayoutReport(merchantId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -333,9 +380,11 @@ public class AnalyticsReportsController {
             content = @Content(schema = @Schema(implementation = PayoutReportResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<PayoutReportResponse>> generateOrgPayoutReport(
+    public Mono<ResponseEntity<?>> generateOrgPayoutReport(
             @RequestHeader("org_id") String orgId,
             @RequestBody PayoutReportRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.generateOrgPayoutReport(orgId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -353,9 +402,11 @@ public class AnalyticsReportsController {
             content = @Content(schema = @Schema(implementation = PayoutReportResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<PayoutReportResponse>> generateProfilePayoutReport(
+    public Mono<ResponseEntity<?>> generateProfilePayoutReport(
             @RequestHeader("profile_id") String profileId,
             @RequestBody PayoutReportRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.generateProfilePayoutReport(profileId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -374,9 +425,11 @@ public class AnalyticsReportsController {
             content = @Content(schema = @Schema(implementation = AuthenticationReportResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<AuthenticationReportResponse>> generateAuthenticationReport(
+    public Mono<ResponseEntity<?>> generateAuthenticationReport(
             @RequestHeader(value = "merchant_id", required = false) String merchantId,
             @RequestBody AuthenticationReportRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.generateAuthenticationReport(
                 merchantId != null ? merchantId : "default", request)
             .map(result -> {
@@ -395,9 +448,11 @@ public class AnalyticsReportsController {
             content = @Content(schema = @Schema(implementation = AuthenticationReportResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<AuthenticationReportResponse>> generateMerchantAuthenticationReport(
+    public Mono<ResponseEntity<?>> generateMerchantAuthenticationReport(
             @RequestHeader("merchant_id") String merchantId,
             @RequestBody AuthenticationReportRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.generateMerchantAuthenticationReport(merchantId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -415,9 +470,11 @@ public class AnalyticsReportsController {
             content = @Content(schema = @Schema(implementation = AuthenticationReportResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<AuthenticationReportResponse>> generateOrgAuthenticationReport(
+    public Mono<ResponseEntity<?>> generateOrgAuthenticationReport(
             @RequestHeader("org_id") String orgId,
             @RequestBody AuthenticationReportRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.generateOrgAuthenticationReport(orgId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -435,9 +492,11 @@ public class AnalyticsReportsController {
             content = @Content(schema = @Schema(implementation = AuthenticationReportResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<AuthenticationReportResponse>> generateProfileAuthenticationReport(
+    public Mono<ResponseEntity<?>> generateProfileAuthenticationReport(
             @RequestHeader("profile_id") String profileId,
             @RequestBody AuthenticationReportRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.generateProfileAuthenticationReport(profileId, request)
             .map(result -> {
                 if (result.isOk()) {

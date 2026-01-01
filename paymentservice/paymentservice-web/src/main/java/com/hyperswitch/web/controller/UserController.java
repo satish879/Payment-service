@@ -8,7 +8,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
@@ -21,11 +25,51 @@ import reactor.core.publisher.Mono;
 @Tag(name = "User Management", description = "User management operations")
 public class UserController {
     
-    private final UserService userService;
+    private static final Logger log = LoggerFactory.getLogger(UserController.class);
     
-    @Autowired
-    public UserController(UserService userService) {
+    private UserService userService;
+    
+    // Default constructor to allow bean creation even if dependencies are missing
+    public UserController() {
+        log.warn("UserController created without dependencies - services will be null");
+    }
+    
+    @Autowired(required = false)
+    public void setUserService(UserService userService) {
         this.userService = userService;
+    }
+    
+    @PostConstruct
+    public void init() {
+        log.info("=== UserController BEAN CREATED ===");
+        log.info("UserService available: {}", userService != null);
+        if (userService == null) {
+            log.warn("UserService is not available - user endpoints will not function properly");
+        }
+    }
+    
+    private <T> Mono<ResponseEntity<T>> checkServiceAvailable() {
+        if (userService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .header("X-Error", "UserService not available")
+                .body(null));
+        }
+        return null;
+    }
+    
+    // Helper method to wrap service calls with null check
+    private <T> Mono<ResponseEntity<T>> callService(Mono<com.hyperswitch.common.types.Result<T, com.hyperswitch.common.errors.PaymentError>> serviceCall) {
+        Mono<ResponseEntity<T>> serviceCheck = checkServiceAvailable();
+        if (serviceCheck != null) {
+            return serviceCheck;
+        }
+        return serviceCall.map(result -> {
+            if (result.isOk()) {
+                return ResponseEntity.ok(result.unwrap());
+            } else {
+                throw new PaymentException(result.unwrapErr());
+            }
+        });
     }
     
     /**
@@ -47,14 +91,7 @@ public class UserController {
     })
     public Mono<ResponseEntity<UserResponse>> getUserDetails(
             @RequestHeader("user_id") String userId) {
-        return userService.getUserDetails(userId)
-            .map(result -> {
-                if (result.isOk()) {
-                    return ResponseEntity.ok(result.unwrap());
-                } else {
-                    throw new PaymentException(result.unwrapErr());
-                }
-            });
+        return callService(userService.getUserDetails(userId));
     }
     
     /**
@@ -75,14 +112,7 @@ public class UserController {
         @ApiResponse(responseCode = "401", description = "Invalid credentials")
     })
     public Mono<ResponseEntity<AuthorizeResponse>> signIn(@RequestBody SignInRequest request) {
-        return userService.signIn(request)
-            .map(result -> {
-                if (result.isOk()) {
-                    return ResponseEntity.ok(result.unwrap());
-                } else {
-                    throw new PaymentException(result.unwrapErr());
-                }
-            });
+        return callService(userService.signIn(request));
     }
     
     /**
@@ -124,14 +154,7 @@ public class UserController {
         @ApiResponse(responseCode = "400", description = "User already exists")
     })
     public Mono<ResponseEntity<AuthorizeResponse>> signUp(@RequestBody SignUpRequest request) {
-        return userService.signUp(request)
-            .map(result -> {
-                if (result.isOk()) {
-                    return ResponseEntity.ok(result.unwrap());
-                } else {
-                    throw new PaymentException(result.unwrapErr());
-                }
-            });
+        return callService(userService.signUp(request));
     }
     
     /**
@@ -153,14 +176,7 @@ public class UserController {
     })
     public Mono<ResponseEntity<AuthorizeResponse>> signUpWithMerchantId(
             @RequestBody SignUpWithMerchantIdRequest request) {
-        return userService.signUpWithMerchantId(request)
-            .map(result -> {
-                if (result.isOk()) {
-                    return ResponseEntity.ok(result.unwrap());
-                } else {
-                    throw new PaymentException(result.unwrapErr());
-                }
-            });
+        return callService(userService.signUpWithMerchantId(request));
     }
     
     /**

@@ -4,6 +4,9 @@ import com.hyperswitch.common.dto.CreatePaymentSessionRequest;
 import com.hyperswitch.common.dto.PaymentSessionResponse;
 import com.hyperswitch.core.paymentsessions.PaymentSessionService;
 import com.hyperswitch.web.controller.PaymentException;
+import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,11 +20,36 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/api/v2/payment-sessions")
 public class PaymentSessionController {
 
-    private final PaymentSessionService sessionService;
+    private static final Logger log = LoggerFactory.getLogger(PaymentSessionController.class);
 
-    @Autowired
-    public PaymentSessionController(PaymentSessionService sessionService) {
+    private PaymentSessionService sessionService;
+
+    // Default constructor to allow bean creation even if dependencies are missing
+    public PaymentSessionController() {
+        log.warn("PaymentSessionController created without dependencies - services will be null");
+    }
+
+    @Autowired(required = false)
+    public void setSessionService(PaymentSessionService sessionService) {
         this.sessionService = sessionService;
+    }
+
+    @PostConstruct
+    public void init() {
+        log.info("=== PaymentSessionController BEAN CREATED ===");
+        log.info("PaymentSessionService available: {}", sessionService != null);
+        if (sessionService == null) {
+            log.warn("PaymentSessionService is not available - payment session endpoints will not function properly");
+        }
+    }
+
+    private <T> Mono<ResponseEntity<T>> checkServiceAvailable() {
+        if (sessionService == null) {
+            return Mono.just(ResponseEntity.status(503)
+                .header("X-Error", "PaymentSessionService not available")
+                .body(null));
+        }
+        return null;
     }
 
     /**
@@ -31,6 +59,10 @@ public class PaymentSessionController {
     @PostMapping
     public Mono<ResponseEntity<PaymentSessionResponse>> createSession(
             @RequestBody CreatePaymentSessionRequest request) {
+        Mono<ResponseEntity<PaymentSessionResponse>> serviceCheck = checkServiceAvailable();
+        if (serviceCheck != null) {
+            return serviceCheck;
+        }
         return sessionService.createSession(request)
             .map(result -> {
                 if (result.isOk()) {
@@ -49,6 +81,10 @@ public class PaymentSessionController {
     public Mono<ResponseEntity<PaymentSessionResponse>> getSession(
             @PathVariable String sessionId,
             @RequestHeader("X-Merchant-Id") String merchantId) {
+        Mono<ResponseEntity<PaymentSessionResponse>> serviceCheck = checkServiceAvailable();
+        if (serviceCheck != null) {
+            return serviceCheck;
+        }
         return sessionService.getSession(sessionId, merchantId)
             .map(result -> {
                 if (result.isOk()) {
@@ -66,6 +102,10 @@ public class PaymentSessionController {
     @GetMapping("/token/{sessionToken}")
     public Mono<ResponseEntity<PaymentSessionResponse>> getSessionByToken(
             @PathVariable String sessionToken) {
+        Mono<ResponseEntity<PaymentSessionResponse>> serviceCheck = checkServiceAvailable();
+        if (serviceCheck != null) {
+            return serviceCheck;
+        }
         return sessionService.getSessionByToken(sessionToken)
             .map(result -> {
                 if (result.isOk()) {
@@ -85,6 +125,10 @@ public class PaymentSessionController {
             @PathVariable String sessionId,
             @RequestHeader("X-Merchant-Id") String merchantId,
             @RequestParam String paymentId) {
+        Mono<ResponseEntity<PaymentSessionResponse>> serviceCheck = checkServiceAvailable();
+        if (serviceCheck != null) {
+            return serviceCheck;
+        }
         return sessionService.completeSession(sessionId, paymentId, merchantId)
             .map(result -> {
                 if (result.isOk()) {
@@ -103,6 +147,10 @@ public class PaymentSessionController {
     public Mono<ResponseEntity<PaymentSessionResponse>> cancelSession(
             @PathVariable String sessionId,
             @RequestHeader("X-Merchant-Id") String merchantId) {
+        Mono<ResponseEntity<PaymentSessionResponse>> serviceCheck = checkServiceAvailable();
+        if (serviceCheck != null) {
+            return serviceCheck;
+        }
         return sessionService.cancelSession(sessionId, merchantId)
             .map(result -> {
                 if (result.isOk()) {

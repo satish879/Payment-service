@@ -16,6 +16,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -32,15 +35,50 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/api/customers")
 public class CustomerController {
 
-    private final CustomerService customerService;
-    private final MandateService mandateService;
-    private final PaymentMethodService paymentMethodService;
+    private static final Logger log = LoggerFactory.getLogger(CustomerController.class);
 
-    @Autowired
-    public CustomerController(CustomerService customerService, MandateService mandateService, PaymentMethodService paymentMethodService) {
+    private CustomerService customerService;
+    private MandateService mandateService;
+    private PaymentMethodService paymentMethodService;
+
+    // Default constructor to allow bean creation even if dependencies are missing
+    public CustomerController() {
+        log.warn("CustomerController created without dependencies - services will be null");
+    }
+
+    @Autowired(required = false)
+    public void setCustomerService(CustomerService customerService) {
         this.customerService = customerService;
+    }
+
+    @Autowired(required = false)
+    public void setMandateService(MandateService mandateService) {
         this.mandateService = mandateService;
+    }
+
+    @Autowired(required = false)
+    public void setPaymentMethodService(PaymentMethodService paymentMethodService) {
         this.paymentMethodService = paymentMethodService;
+    }
+
+    @PostConstruct
+    public void init() {
+        log.info("=== CustomerController BEAN CREATED ===");
+        log.info("CustomerService available: {}", customerService != null);
+        log.info("MandateService available: {}", mandateService != null);
+        log.info("PaymentMethodService available: {}", paymentMethodService != null);
+        if (customerService == null) {
+            log.warn("CustomerService is not available - customer endpoints will not function properly");
+        }
+    }
+
+    private <T> Mono<ResponseEntity<T>> checkServiceAvailable() {
+        if (customerService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .header("X-Error", "CustomerService not available")
+                .body(null));
+        }
+        return null;
     }
 
     /**
@@ -49,6 +87,10 @@ public class CustomerController {
      */
     @PostMapping
     public Mono<ResponseEntity<CustomerResponse>> createCustomer(@RequestBody CustomerRequest request) {
+        Mono<ResponseEntity<CustomerResponse>> serviceCheck = checkServiceAvailable();
+        if (serviceCheck != null) {
+            return serviceCheck;
+        }
         return customerService.createCustomer(request)
             .map(result -> {
                 if (result.isOk()) {
@@ -65,6 +107,10 @@ public class CustomerController {
      */
     @GetMapping("/{id}")
     public Mono<ResponseEntity<CustomerResponse>> getCustomer(@PathVariable String id) {
+        Mono<ResponseEntity<CustomerResponse>> serviceCheck = checkServiceAvailable();
+        if (serviceCheck != null) {
+            return serviceCheck;
+        }
         CustomerId customerId = CustomerId.of(id);
         return customerService.getCustomer(customerId)
             .map(result -> {

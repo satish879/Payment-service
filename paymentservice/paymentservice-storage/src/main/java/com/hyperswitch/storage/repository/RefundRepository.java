@@ -21,7 +21,7 @@ public interface RefundRepository extends ReactiveCrudRepository<RefundEntity, S
     
     Flux<RefundEntity> findByMerchantIdOrderByCreatedAtDesc(String merchantId);
     
-    Flux<RefundEntity> findByMerchantIdAndStatusOrderByCreatedAtDesc(String merchantId, String status);
+    Flux<RefundEntity> findByMerchantIdAndRefundStatusOrderByCreatedAtDesc(String merchantId, String refundStatus);
     
     Flux<RefundEntity> findByMerchantIdAndConnectorOrderByCreatedAtDesc(String merchantId, String connector);
     

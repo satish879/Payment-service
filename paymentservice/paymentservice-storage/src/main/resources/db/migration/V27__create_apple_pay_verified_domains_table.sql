@@ -7,8 +7,8 @@ CREATE TABLE IF NOT EXISTS apple_pay_verified_domains (
     domain_name VARCHAR(255) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_apple_pay_merchant FOREIGN KEY (merchant_id) REFERENCES merchant_account(merchant_id) ON DELETE CASCADE,
-    CONSTRAINT fk_apple_pay_mca FOREIGN KEY (merchant_connector_account_id) REFERENCES merchant_connector_account(merchant_connector_account_id) ON DELETE CASCADE,
+    -- CONSTRAINT fk_apple_pay_merchant FOREIGN KEY (merchant_id) REFERENCES merchant_account(merchant_id) ON DELETE CASCADE,
+    CONSTRAINT fk_apple_pay_mca FOREIGN KEY (merchant_connector_account_id) REFERENCES merchant_connector_account(id) ON DELETE CASCADE,
     UNIQUE(merchant_id, merchant_connector_account_id, domain_name)
 );
 

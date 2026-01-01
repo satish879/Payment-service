@@ -57,7 +57,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentMapper paymentMapper;
     private final com.hyperswitch.core.mandates.MandateService mandateService;
     private final com.hyperswitch.core.metrics.PaymentMetrics paymentMetrics;
-    private final AnalyticsService analyticsService;
+    private AnalyticsService analyticsService; // Made optional - no implementation available
     private final RoutingDecisionLogRepository routingDecisionLogRepository;
 
     @Autowired
@@ -70,7 +70,6 @@ public class PaymentServiceImpl implements PaymentService {
             PaymentMapper paymentMapper,
             com.hyperswitch.core.mandates.MandateService mandateService,
             com.hyperswitch.core.metrics.PaymentMetrics paymentMetrics,
-            AnalyticsService analyticsService,
             RoutingDecisionLogRepository routingDecisionLogRepository) {
         this.paymentIntentRepository = paymentIntentRepository;
         this.paymentAttemptRepository = paymentAttemptRepository;
@@ -80,8 +79,20 @@ public class PaymentServiceImpl implements PaymentService {
         this.paymentMapper = paymentMapper;
         this.mandateService = mandateService;
         this.paymentMetrics = paymentMetrics;
-        this.analyticsService = analyticsService;
         this.routingDecisionLogRepository = routingDecisionLogRepository;
+    }
+
+    /**
+     * Optional setter for AnalyticsService - will be null if no implementation is available
+     */
+    @Autowired(required = false)
+    public void setAnalyticsService(AnalyticsService analyticsService) {
+        this.analyticsService = analyticsService;
+        if (analyticsService == null) {
+            log.warn("AnalyticsService not available - analytics recording will be skipped");
+        } else {
+            log.info("AnalyticsService injected successfully");
+        }
     }
 
     @Override
@@ -89,37 +100,70 @@ public class PaymentServiceImpl implements PaymentService {
         log.info("Creating payment for merchant: {}", request.getMerchantId());
         long startTime = System.currentTimeMillis();
         
-        return Mono.fromCallable(() -> {
-            // Generate payment ID
-            PaymentId paymentId = PaymentId.generate();
-            
-                // Generate client secret
-                String clientSecret = generateClientSecretForPayment(paymentId.getValue());
-                
-                // Create payment intent entity
-                return PaymentIntentEntity.builder()
-                    .id(UUID.randomUUID().toString())
-                    .paymentId(paymentId.getValue())
-                    .merchantId(request.getMerchantId())
-                    .status(PaymentStatus.REQUIRES_CONFIRMATION.name())
-                    .amount(convertToMinorUnits(request.getAmount()))
-                    .currency(request.getAmount().getCurrencyCode())
-                    .amountCaptured(0L)
-                    .customerId(request.getCustomerId())
-                    .description(request.getDescription())
-                    .returnUrl(request.getReturnUrl())
-                    .metadata(request.getMetadata())
-                    .attemptCount(0)
-                    .createdAt(Instant.now())
-                    .modifiedAt(Instant.now())
-                    .offSession(request.getOffSession() != null ? request.getOffSession() : Boolean.FALSE)
-                    .setupFutureUsage(request.getPaymentType() != null && "setup_mandate".equals(request.getPaymentType()) 
-                        ? "off_session" : null)
-                    .clientSecret(clientSecret)
-                    .build();
+        // Validate amount is not null
+        if (request.getAmount() == null) {
+            return Mono.just(Result.<PaymentIntent, PaymentError>err(PaymentError.of(
+                "INVALID_REQUEST",
+                "Amount is required"
+            )));
+        }
+        
+        // Generate payment ID and create entity (avoiding Mono.fromCallable to preserve transaction context)
+        PaymentId paymentId = PaymentId.generate();
+        String clientSecret = generateClientSecretForPayment(paymentId.getValue());
+        
+        // Prepare metadata - include paymentMethod if provided
+        Map<String, Object> metadata = request.getMetadata() != null 
+            ? new HashMap<>(request.getMetadata()) 
+            : new HashMap<>();
+        
+        // Store paymentMethod in metadata so it can be retrieved later
+        if (request.getPaymentMethod() != null) {
+            metadata.put("payment_method", request.getPaymentMethod().name());
+        }
+        
+        // Create payment intent entity
+        PaymentIntentEntity entity = PaymentIntentEntity.builder()
+            .id(UUID.randomUUID().toString())
+            .paymentId(paymentId.getValue())
+            .merchantId(request.getMerchantId())
+            .status(PaymentStatus.REQUIRES_CONFIRMATION.name())
+            .amount(convertToMinorUnits(request.getAmount()))
+            .currency(request.getAmount().getCurrencyCode())
+            .amountCaptured(0L)
+            .customerId(request.getCustomerId())
+            .description(request.getDescription())
+            .returnUrl(request.getReturnUrl())
+            .metadata(metadata)
+            .attemptCount(0)
+            .createdAt(Instant.now())
+            .modifiedAt(Instant.now())
+            .offSession(request.getOffSession() != null ? request.getOffSession() : Boolean.FALSE)
+            .setupFutureUsage(request.getPaymentType() != null && "setup_mandate".equals(request.getPaymentType()) 
+                ? "off_session" : null)
+            .clientSecret(clientSecret)
+            .build();
+        
+        return Mono.just(entity)
+        .flatMap(entityToSave -> {
+            log.info("Saving payment intent entity: paymentId={}, merchantId={}", 
+                entityToSave.getPaymentId(), entityToSave.getMerchantId());
+            return paymentIntentRepository.save(entityToSave)
+                .doOnNext(saved -> {
+                    log.info("Payment intent saved successfully: paymentId={}, id={}", 
+                        saved.getPaymentId(), saved.getId());
+                })
+                .doOnError(error -> {
+                    log.error("Error saving payment intent: paymentId={}, error={}", 
+                        entityToSave.getPaymentId(), error.getMessage(), error);
+                })
+                .doOnSuccess(saved -> {
+                    log.info("Save operation completed successfully: paymentId={}, id={}", 
+                        saved.getPaymentId(), saved.getId());
+                });
         })
-        .flatMap(paymentIntentRepository::save)
         .map(saved -> {
+            log.info("Mapping saved payment intent to PaymentIntent: paymentId={}", saved.getPaymentId());
             PaymentIntent paymentIntent = paymentMapper.toPaymentIntent(saved);
             paymentMetrics.incrementPaymentCreated();
             paymentMetrics.recordPaymentProcessingTime(
@@ -143,9 +187,32 @@ public class PaymentServiceImpl implements PaymentService {
             PaymentId paymentId, 
             ConfirmPaymentRequest request) {
         log.info("Confirming payment: {}", paymentId);
+        log.info("Looking up payment with paymentId: {}", paymentId.getValue());
         
         return paymentIntentRepository.findByPaymentId(paymentId.getValue())
-            .switchIfEmpty(Mono.error(new RuntimeException(PAYMENT_NOT_FOUND_MSG)))
+            .doOnNext(intent -> {
+                log.info("Found payment intent: paymentId={}, id={}, status={}, merchantId={}", 
+                    intent.getPaymentId(), intent.getId(), intent.getStatus(), intent.getMerchantId());
+            })
+            .switchIfEmpty(Mono.defer(() -> {
+                log.warn("Payment not found in database: paymentId={}", paymentId.getValue());
+                // Try to find by merchant ID as well for debugging
+                return paymentIntentRepository.findAll()
+                    .take(10)
+                    .collectList()
+                    .doOnNext(allPayments -> {
+                        log.warn("Sample of payments in database (first 10): count={}", allPayments.size());
+                        if (allPayments.isEmpty()) {
+                            log.warn("Database appears to be empty - no payments found");
+                        } else {
+                            allPayments.forEach(p -> {
+                                log.warn("  - paymentId={}, id={}, merchantId={}, status={}, createdAt={}", 
+                                    p.getPaymentId(), p.getId(), p.getMerchantId(), p.getStatus(), p.getCreatedAt());
+                            });
+                        }
+                    })
+                    .then(Mono.error(new RuntimeException(PAYMENT_NOT_FOUND_MSG + ": " + paymentId.getValue())));
+            }))
             .flatMap(intent -> validateAndProcessConfirmation(intent, request))
             .onErrorResume(error -> {
                 log.error("Error confirming payment: {}", paymentId, error);
@@ -399,7 +466,26 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public Mono<Result<PaymentIntent, PaymentError>> getPayment(PaymentId paymentId) {
+        log.info("Getting payment: paymentId={}", paymentId.getValue());
         return paymentIntentRepository.findByPaymentId(paymentId.getValue())
+            .doOnNext(intent -> {
+                log.info("Found payment: paymentId={}, id={}, status={}, merchantId={}", 
+                    intent.getPaymentId(), intent.getId(), intent.getStatus(), intent.getMerchantId());
+            })
+            .switchIfEmpty(Mono.defer(() -> {
+                log.warn("Payment not found: paymentId={}", paymentId.getValue());
+                return paymentIntentRepository.findAll()
+                    .take(5)
+                    .collectList()
+                    .doOnNext(allPayments -> {
+                        log.warn("Sample payments in DB (first 5): count={}", allPayments.size());
+                        allPayments.forEach(p -> {
+                            log.warn("  - paymentId={}, merchantId={}, status={}", 
+                                p.getPaymentId(), p.getMerchantId(), p.getStatus());
+                        });
+                    })
+                    .then(Mono.empty());
+            }))
             .map(intent -> Result.<PaymentIntent, PaymentError>ok(paymentMapper.toPaymentIntent(intent)))
             .switchIfEmpty(Mono.just(Result.<PaymentIntent, PaymentError>err(PaymentError.of(
                 "PAYMENT_NOT_FOUND",
@@ -1883,6 +1969,11 @@ public class PaymentServiceImpl implements PaymentService {
         PaymentAttemptEntity attempt,
         boolean success
     ) {
+        // Skip analytics if service is not available
+        if (analyticsService == null) {
+            return Mono.empty();
+        }
+        
         if (attempt.getConnector() == null) {
             return Mono.empty();
         }

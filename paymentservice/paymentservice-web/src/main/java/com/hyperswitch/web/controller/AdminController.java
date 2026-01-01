@@ -8,9 +8,11 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
@@ -32,16 +34,41 @@ public class AdminController {
     
     private static final Logger log = LoggerFactory.getLogger(AdminController.class);
     
-    private final MerchantAccountService merchantAccountService;
-    private final ConfigService configService;
+    private MerchantAccountService merchantAccountService;
+    private ConfigService configService;
     
-    @Autowired
-    public AdminController(
-            MerchantAccountService merchantAccountService,
-            ConnectorAccountService connectorAccountService,
-            ConfigService configService) {
+    // Default constructor to allow bean creation even if dependencies are missing
+    public AdminController() {
+        log.warn("AdminController created without dependencies - services will be null");
+    }
+    
+    @Autowired(required = false)
+    public void setMerchantAccountService(MerchantAccountService merchantAccountService) {
         this.merchantAccountService = merchantAccountService;
+    }
+    
+    @Autowired(required = false)
+    public void setConfigService(ConfigService configService) {
         this.configService = configService;
+    }
+    
+    @PostConstruct
+    public void init() {
+        log.info("=== AdminController BEAN CREATED ===");
+        log.info("MerchantAccountService available: {}", merchantAccountService != null);
+        log.info("ConfigService available: {}", configService != null);
+        if (merchantAccountService == null || configService == null) {
+            log.warn("Some services are not available - admin endpoints may not function properly");
+        }
+    }
+    
+    private <T> Mono<ResponseEntity<T>> checkServicesAvailable() {
+        if (merchantAccountService == null || configService == null) {
+            return Mono.just(ResponseEntity.status(org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE)
+                .header("X-Error", "Required services not available")
+                .body(null));
+        }
+        return null;
     }
     
     /**
@@ -60,6 +87,10 @@ public class AdminController {
         )
     })
     public Mono<ResponseEntity<Flux<MerchantAccountResponse>>> listAllMerchantAccounts() {
+        Mono<ResponseEntity<Flux<MerchantAccountResponse>>> serviceCheck = checkServicesAvailable();
+        if (serviceCheck != null) {
+            return serviceCheck;
+        }
         return merchantAccountService.listMerchantAccounts()
             .map(result -> {
                 if (result.isOk()) {

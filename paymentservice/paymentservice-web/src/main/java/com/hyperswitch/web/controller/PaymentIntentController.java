@@ -3,7 +3,6 @@ package com.hyperswitch.web.controller;
 import com.hyperswitch.common.dto.*;
 import com.hyperswitch.core.payments.ConfirmPaymentRequest;
 import com.hyperswitch.core.payments.PaymentService;
-import com.hyperswitch.web.controller.PaymentException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -24,12 +23,18 @@ import reactor.core.publisher.Mono;
 @Tag(name = "Payment Intents (v2)", description = "Payment intent operations using v2 API")
 public class PaymentIntentController {
 
-    private final PaymentService paymentService;
+    private PaymentService paymentService;
 
-    @Autowired
-    public PaymentIntentController(PaymentService paymentService) {
+    // Default constructor to allow bean creation even if dependencies are missing
+    public PaymentIntentController() {
+        // PaymentService will be injected via setter if available
+    }
+
+    @Autowired(required = false)
+    public void setPaymentService(PaymentService paymentService) {
         this.paymentService = paymentService;
     }
+
 
     /**
      * Create payment intent (v2 API)
@@ -55,6 +60,11 @@ public class PaymentIntentController {
             @RequestHeader("X-Merchant-Id") String merchantId,
             @Parameter(description = "Payment intent creation request", required = true)
             @RequestBody PaymentsCreateIntentRequest request) {
+        if (paymentService == null) {
+            return Mono.just(ResponseEntity.status(503)
+                .header("X-Error", "PaymentService not available")
+                .body(new PaymentsIntentResponse()));
+        }
         return paymentService.createPaymentIntentV2(merchantId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -89,6 +99,11 @@ public class PaymentIntentController {
             @RequestHeader("X-Merchant-Id") String merchantId,
             @Parameter(description = "Payment ID", required = true)
             @PathVariable("payment_id") String paymentId) {
+        if (paymentService == null) {
+            return Mono.just(ResponseEntity.status(503)
+                .header("X-Error", "PaymentService not available")
+                .body(new PaymentsIntentResponse()));
+        }
         return paymentService.getPaymentIntentV2(paymentId, merchantId)
             .map(result -> {
                 if (result.isOk()) {
@@ -125,6 +140,11 @@ public class PaymentIntentController {
             @PathVariable("payment_id") String paymentId,
             @Parameter(description = "Payment intent update request", required = true)
             @RequestBody PaymentsUpdateIntentRequest request) {
+        if (paymentService == null) {
+            return Mono.just(ResponseEntity.status(503)
+                .header("X-Error", "PaymentService not available")
+                .body(new PaymentsIntentResponse()));
+        }
         return paymentService.updatePaymentIntentV2(paymentId, merchantId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -165,6 +185,11 @@ public class PaymentIntentController {
             @PathVariable("payment_id") String paymentId,
             @Parameter(description = "Payment confirmation request", required = true)
             @RequestBody ConfirmPaymentRequest request) {
+        if (paymentService == null) {
+            return Mono.just(ResponseEntity.status(503)
+                .header("X-Error", "PaymentService not available")
+                .body(new PaymentsIntentResponse()));
+        }
         return paymentService.confirmPaymentIntentV2(paymentId, merchantId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -199,6 +224,11 @@ public class PaymentIntentController {
             @RequestHeader("X-Merchant-Id") String merchantId,
             @Parameter(description = "Payment creation request", required = true)
             @RequestBody CreatePaymentRequest request) {
+        if (paymentService == null) {
+            return Mono.just(ResponseEntity.status(503)
+                .header("X-Error", "PaymentService not available")
+                .body(new PaymentsIntentResponse()));
+        }
         return paymentService.createAndConfirmPaymentIntentV2(merchantId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -233,6 +263,11 @@ public class PaymentIntentController {
             @RequestHeader("X-Merchant-Id") String merchantId,
             @Parameter(description = "Payment ID", required = true)
             @PathVariable("payment_id") String paymentId) {
+        if (paymentService == null) {
+            return Mono.just(ResponseEntity.status(503)
+                .header("X-Error", "PaymentService not available")
+                .body(new PaymentsStartRedirectionResponse()));
+        }
         return paymentService.startPaymentRedirectionV2(paymentId, merchantId)
             .map(result -> {
                 if (result.isOk()) {
@@ -270,6 +305,11 @@ public class PaymentIntentController {
             @PathVariable("publishable_key") String publishableKey,
             @Parameter(description = "Profile ID", required = true)
             @PathVariable("profile_id") String profileId) {
+        if (paymentService == null) {
+            return Mono.just(ResponseEntity.status(503)
+                .header("X-Error", "PaymentService not available")
+                .body(new PaymentsFinishRedirectionResponse()));
+        }
         return paymentService.finishPaymentRedirectionV2(paymentId, publishableKey, profileId)
             .map(result -> {
                 if (result.isOk()) {
@@ -306,6 +346,11 @@ public class PaymentIntentController {
             @PathVariable("payment_id") String paymentId,
             @Parameter(description = "Session request", required = true)
             @RequestBody PaymentsSessionRequest request) {
+        if (paymentService == null) {
+            return Mono.just(ResponseEntity.status(503)
+                .header("X-Error", "PaymentService not available")
+                .body(new PaymentsSessionResponse()));
+        }
         return paymentService.createExternalSdkTokensV2(paymentId, merchantId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -342,6 +387,11 @@ public class PaymentIntentController {
             @PathVariable("payment_id") String paymentId,
             @Parameter(description = "Session tokens request", required = true)
             @RequestBody PaymentsPostSessionTokensRequest request) {
+        if (paymentService == null) {
+            return Mono.just(ResponseEntity.status(503)
+                .header("X-Error", "PaymentService not available")
+                .body(new PaymentsPostSessionTokensResponse()));
+        }
         return paymentService.postSessionTokens(paymentId, merchantId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -372,6 +422,11 @@ public class PaymentIntentController {
             @RequestHeader("X-Merchant-Id") String merchantId,
             @Parameter(description = "Session request", required = true)
             @RequestBody PaymentsSessionRequest request) {
+        if (paymentService == null) {
+            return Mono.just(ResponseEntity.status(503)
+                .header("X-Error", "PaymentService not available")
+                .body(new PaymentsSessionResponse()));
+        }
         return paymentService.createSessionTokens(merchantId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -404,6 +459,11 @@ public class PaymentIntentController {
             @PathVariable("payment_id") String paymentId,
             @RequestHeader("X-Merchant-Id") String merchantId,
             @RequestBody(required = false) java.util.Map<String, Object> request) {
+        if (paymentService == null) {
+            return Mono.just(ResponseEntity.status(503)
+                .header("X-Error", "PaymentService not available")
+                .body(new PaymentsIntentResponse()));
+        }
         return paymentService.proxyConfirmIntent(paymentId, merchantId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -436,6 +496,11 @@ public class PaymentIntentController {
             @PathVariable("payment_id") String paymentId,
             @RequestHeader("X-Merchant-Id") String merchantId,
             @RequestBody(required = false) java.util.Map<String, Object> request) {
+        if (paymentService == null) {
+            return Mono.just(ResponseEntity.status(503)
+                .header("X-Error", "PaymentService not available")
+                .body(new PaymentsIntentResponse()));
+        }
         return paymentService.confirmIntentWithExternalVaultProxy(paymentId, merchantId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -466,6 +531,11 @@ public class PaymentIntentController {
     public Mono<ResponseEntity<PaymentsIntentResponse>> getRevenueRecoveryIntent(
             @PathVariable("payment_id") String paymentId,
             @RequestHeader("X-Merchant-Id") String merchantId) {
+        if (paymentService == null) {
+            return Mono.just(ResponseEntity.status(503)
+                .header("X-Error", "PaymentService not available")
+                .body(new PaymentsIntentResponse()));
+        }
         return paymentService.getRevenueRecoveryIntent(paymentId, merchantId)
             .map(result -> {
                 if (result.isOk()) {
@@ -497,6 +567,11 @@ public class PaymentIntentController {
             @PathVariable("payment_id") String paymentId,
             @RequestHeader("X-Merchant-Id") String merchantId,
             @RequestParam(required = false) Boolean forceSync) {
+        if (paymentService == null) {
+            return Mono.just(ResponseEntity.status(503)
+                .header("X-Error", "PaymentService not available")
+                .body(new PaymentsIntentResponse()));
+        }
         return paymentService.getPaymentStatusV2(paymentId, merchantId, forceSync)
             .map(result -> {
                 if (result.isOk()) {
@@ -527,6 +602,11 @@ public class PaymentIntentController {
     public Mono<ResponseEntity<PaymentsIntentResponse>> getPaymentIntentByMerchantReferenceIdV2(
             @PathVariable("merchant_reference_id") String merchantReferenceId,
             @RequestHeader("X-Merchant-Id") String merchantId) {
+        if (paymentService == null) {
+            return Mono.just(ResponseEntity.status(503)
+                .header("X-Error", "PaymentService not available")
+                .body(new PaymentsIntentResponse()));
+        }
         return paymentService.getPaymentIntentByMerchantReferenceIdV2(merchantId, merchantReferenceId)
             .map(result -> {
                 if (result.isOk()) {
@@ -557,6 +637,11 @@ public class PaymentIntentController {
     public Mono<ResponseEntity<PaymentsIntentResponse>> createRecoveryPayment(
             @RequestHeader("X-Merchant-Id") String merchantId,
             @RequestBody com.hyperswitch.common.dto.CreatePaymentRequest request) {
+        if (paymentService == null) {
+            return Mono.just(ResponseEntity.status(503)
+                .header("X-Error", "PaymentService not available")
+                .body(new PaymentsIntentResponse()));
+        }
         return paymentService.createRecoveryPayment(merchantId, request)
             .map(result -> {
                 if (result.isOk()) {

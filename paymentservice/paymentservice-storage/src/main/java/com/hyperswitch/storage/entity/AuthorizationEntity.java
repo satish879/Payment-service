@@ -8,6 +8,8 @@ import java.time.Instant;
 
 /**
  * Authorization entity for tracking incremental authorizations
+ * Note: "authorization" is a reserved keyword in PostgreSQL, but Spring Data R2DBC
+ * should handle the quoted table name automatically when generating queries.
  */
 @Table("authorization")
 public class AuthorizationEntity {

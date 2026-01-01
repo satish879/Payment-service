@@ -1,5 +1,6 @@
 package com.hyperswitch.common.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hyperswitch.common.enums.CaptureMethod;
 import com.hyperswitch.common.enums.PaymentMethod;
 import com.hyperswitch.common.types.Amount;
@@ -10,25 +11,53 @@ import java.util.Map;
 /**
  * Request to create a new payment
  */
-public final class CreatePaymentRequest {
+public class CreatePaymentRequest {
     @NotNull
-    private final Amount amount;
+    @JsonProperty("amount")
+    private Amount amount;
     
     @NotNull
-    private final String merchantId;
+    @JsonProperty("merchantId")
+    private String merchantId;
     
-    private final PaymentMethod paymentMethod;
-    private final String customerId;
-    private final CaptureMethod captureMethod;
-    private final Boolean confirm;
-    private final String returnUrl;
-    private final Map<String, Object> metadata;
-    private final String description;
-    private final String authenticationType;
-    private final Boolean offSession; // For MIT payments
-    private final RecurringDetails recurringDetails; // For MIT payments
-    private final String paymentType; // "setup_mandate" for zero-dollar authorization
+    @JsonProperty("paymentMethod")
+    private PaymentMethod paymentMethod;
+    
+    @JsonProperty("customerId")
+    private String customerId;
+    
+    @JsonProperty("captureMethod")
+    private CaptureMethod captureMethod;
+    
+    @JsonProperty("confirm")
+    private Boolean confirm;
+    
+    @JsonProperty("returnUrl")
+    private String returnUrl;
+    
+    @JsonProperty("metadata")
+    private Map<String, Object> metadata;
+    
+    @JsonProperty("description")
+    private String description;
+    
+    @JsonProperty("authenticationType")
+    private String authenticationType;
+    
+    @JsonProperty("offSession")
+    private Boolean offSession; // For MIT payments
+    
+    @JsonProperty("recurringDetails")
+    private RecurringDetails recurringDetails; // For MIT payments
+    
+    @JsonProperty("paymentType")
+    private String paymentType; // "setup_mandate" for zero-dollar authorization
 
+    // Default constructor for Jackson deserialization
+    public CreatePaymentRequest() {
+    }
+
+    // Builder-based constructor (for programmatic creation)
     private CreatePaymentRequest(Builder builder) {
         this.amount = builder.amount;
         this.merchantId = builder.merchantId;
@@ -99,6 +128,59 @@ public final class CreatePaymentRequest {
 
     public String getPaymentType() {
         return paymentType;
+    }
+
+    // Setters for Jackson deserialization
+    public void setAmount(Amount amount) {
+        this.amount = amount;
+    }
+
+    public void setMerchantId(String merchantId) {
+        this.merchantId = merchantId;
+    }
+
+    public void setPaymentMethod(PaymentMethod paymentMethod) {
+        this.paymentMethod = paymentMethod;
+    }
+
+    public void setCustomerId(String customerId) {
+        this.customerId = customerId;
+    }
+
+    public void setCaptureMethod(CaptureMethod captureMethod) {
+        this.captureMethod = captureMethod;
+    }
+
+    public void setConfirm(Boolean confirm) {
+        this.confirm = confirm;
+    }
+
+    public void setReturnUrl(String returnUrl) {
+        this.returnUrl = returnUrl;
+    }
+
+    public void setMetadata(Map<String, Object> metadata) {
+        this.metadata = metadata;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setAuthenticationType(String authenticationType) {
+        this.authenticationType = authenticationType;
+    }
+
+    public void setOffSession(Boolean offSession) {
+        this.offSession = offSession;
+    }
+
+    public void setRecurringDetails(RecurringDetails recurringDetails) {
+        this.recurringDetails = recurringDetails;
+    }
+
+    public void setPaymentType(String paymentType) {
+        this.paymentType = paymentType;
     }
 
     public static class Builder {

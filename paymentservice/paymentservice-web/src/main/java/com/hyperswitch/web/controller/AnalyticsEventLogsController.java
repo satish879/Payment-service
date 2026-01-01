@@ -11,16 +11,21 @@ import com.hyperswitch.common.dto.RoutingEventLogsResponse;
 import com.hyperswitch.common.dto.OutgoingWebhookEventLogsRequest;
 import com.hyperswitch.common.dto.OutgoingWebhookEventLogsResponse;
 import com.hyperswitch.core.analytics.AnalyticsService;
+import com.hyperswitch.web.controller.PaymentException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
+import java.util.Map;
 
 /**
  * Controller for analytics event logs endpoints
@@ -30,11 +35,26 @@ import reactor.core.publisher.Mono;
 @Tag(name = "Analytics Event Logs", description = "Analytics event logs operations")
 public class AnalyticsEventLogsController {
 
-    private final AnalyticsService analyticsService;
+    private static final Logger log = LoggerFactory.getLogger(AnalyticsEventLogsController.class);
 
-    @Autowired
-    public AnalyticsEventLogsController(AnalyticsService analyticsService) {
+    private AnalyticsService analyticsService;
+
+    // Default constructor to allow bean creation even if dependencies are missing
+    public AnalyticsEventLogsController() {
+        log.warn("AnalyticsEventLogsController created without dependencies - services will be null");
+    }
+
+    @Autowired(required = false)
+    public void setAnalyticsService(AnalyticsService analyticsService) {
         this.analyticsService = analyticsService;
+    }
+
+    private Mono<ResponseEntity<?>> checkServiceAvailable() {
+        if (analyticsService == null) {
+            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(Map.of("error", "Analytics service is not available")));
+        }
+        return null;
     }
 
     // API Event Logs
@@ -45,9 +65,11 @@ public class AnalyticsEventLogsController {
             content = @Content(schema = @Schema(implementation = ApiEventLogsResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<ApiEventLogsResponse>> getApiEventLogs(
+    public Mono<ResponseEntity<?>> getApiEventLogs(
             @RequestHeader(value = "merchant_id", required = false) String merchantId,
             @ModelAttribute ApiEventLogsRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getApiEventLogs(
                 merchantId != null ? merchantId : "default", request)
             .map(result -> {
@@ -66,9 +88,11 @@ public class AnalyticsEventLogsController {
             content = @Content(schema = @Schema(implementation = ApiEventLogsResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<ApiEventLogsResponse>> getProfileApiEventLogs(
+    public Mono<ResponseEntity<?>> getProfileApiEventLogs(
             @RequestHeader("profile_id") String profileId,
             @ModelAttribute ApiEventLogsRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getProfileApiEventLogs(profileId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -87,9 +111,11 @@ public class AnalyticsEventLogsController {
             content = @Content(schema = @Schema(implementation = SdkEventLogsResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<SdkEventLogsResponse>> getSdkEventLogs(
+    public Mono<ResponseEntity<?>> getSdkEventLogs(
             @RequestHeader(value = "merchant_id", required = false) String merchantId,
             @RequestBody SdkEventLogsRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getSdkEventLogs(
                 merchantId != null ? merchantId : "default", request)
             .map(result -> {
@@ -108,9 +134,11 @@ public class AnalyticsEventLogsController {
             content = @Content(schema = @Schema(implementation = SdkEventLogsResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<SdkEventLogsResponse>> getProfileSdkEventLogs(
+    public Mono<ResponseEntity<?>> getProfileSdkEventLogs(
             @RequestHeader("profile_id") String profileId,
             @RequestBody SdkEventLogsRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getProfileSdkEventLogs(profileId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -129,9 +157,11 @@ public class AnalyticsEventLogsController {
             content = @Content(schema = @Schema(implementation = ConnectorEventLogsResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<ConnectorEventLogsResponse>> getConnectorEventLogs(
+    public Mono<ResponseEntity<?>> getConnectorEventLogs(
             @RequestHeader(value = "merchant_id", required = false) String merchantId,
             @ModelAttribute ConnectorEventLogsRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getConnectorEventLogs(
                 merchantId != null ? merchantId : "default", request)
             .map(result -> {
@@ -150,9 +180,11 @@ public class AnalyticsEventLogsController {
             content = @Content(schema = @Schema(implementation = ConnectorEventLogsResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<ConnectorEventLogsResponse>> getProfileConnectorEventLogs(
+    public Mono<ResponseEntity<?>> getProfileConnectorEventLogs(
             @RequestHeader("profile_id") String profileId,
             @ModelAttribute ConnectorEventLogsRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getProfileConnectorEventLogs(profileId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -171,9 +203,11 @@ public class AnalyticsEventLogsController {
             content = @Content(schema = @Schema(implementation = RoutingEventLogsResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<RoutingEventLogsResponse>> getRoutingEventLogs(
+    public Mono<ResponseEntity<?>> getRoutingEventLogs(
             @RequestHeader(value = "merchant_id", required = false) String merchantId,
             @ModelAttribute RoutingEventLogsRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getRoutingEventLogs(
                 merchantId != null ? merchantId : "default", request)
             .map(result -> {
@@ -192,9 +226,11 @@ public class AnalyticsEventLogsController {
             content = @Content(schema = @Schema(implementation = RoutingEventLogsResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<RoutingEventLogsResponse>> getProfileRoutingEventLogs(
+    public Mono<ResponseEntity<?>> getProfileRoutingEventLogs(
             @RequestHeader("profile_id") String profileId,
             @ModelAttribute RoutingEventLogsRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getProfileRoutingEventLogs(profileId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -213,9 +249,11 @@ public class AnalyticsEventLogsController {
             content = @Content(schema = @Schema(implementation = OutgoingWebhookEventLogsResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<OutgoingWebhookEventLogsResponse>> getOutgoingWebhookEventLogs(
+    public Mono<ResponseEntity<?>> getOutgoingWebhookEventLogs(
             @RequestHeader(value = "merchant_id", required = false) String merchantId,
             @ModelAttribute OutgoingWebhookEventLogsRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getOutgoingWebhookEventLogs(
                 merchantId != null ? merchantId : "default", request)
             .map(result -> {
@@ -234,9 +272,11 @@ public class AnalyticsEventLogsController {
             content = @Content(schema = @Schema(implementation = OutgoingWebhookEventLogsResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public Mono<ResponseEntity<OutgoingWebhookEventLogsResponse>> getProfileOutgoingWebhookEventLogs(
+    public Mono<ResponseEntity<?>> getProfileOutgoingWebhookEventLogs(
             @RequestHeader("profile_id") String profileId,
             @ModelAttribute OutgoingWebhookEventLogsRequest request) {
+        Mono<ResponseEntity<?>> unavailable = checkServiceAvailable();
+        if (unavailable != null) return unavailable;
         return analyticsService.getProfileOutgoingWebhookEventLogs(profileId, request)
             .map(result -> {
                 if (result.isOk()) {
