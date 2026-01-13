@@ -72,6 +72,11 @@ public class LoggingJackson2JsonDecoder extends Jackson2JsonDecoder {
 
                 // Log overall decoding payload
                 log.info("=== LoggingJackson2JsonDecoder: decoding elementType={} payload={} ===", elementType.toString(), payload);
+                
+                // Special logging for ThreeDSResumeRequest
+                if (elementType.toString().contains("ThreeDSResumeRequest")) {
+                    log.info("=== SPECIAL: Decoding ThreeDSResumeRequest with payload: {} ===", payload);
+                }
 
                 // If it's CreatePaymentRequest or Amount, log more specifically
                 if (elementType.toString().contains("CreatePaymentRequest") || elementType.toString().contains("Amount")) {

@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.reactive.TransactionalOperator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -59,6 +60,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final com.hyperswitch.core.metrics.PaymentMetrics paymentMetrics;
     private AnalyticsService analyticsService; // Made optional - no implementation available
     private final RoutingDecisionLogRepository routingDecisionLogRepository;
+    private final TransactionalOperator transactionalOperator;
 
     @Autowired
     public PaymentServiceImpl(
@@ -70,7 +72,8 @@ public class PaymentServiceImpl implements PaymentService {
             PaymentMapper paymentMapper,
             com.hyperswitch.core.mandates.MandateService mandateService,
             com.hyperswitch.core.metrics.PaymentMetrics paymentMetrics,
-            RoutingDecisionLogRepository routingDecisionLogRepository) {
+            RoutingDecisionLogRepository routingDecisionLogRepository,
+            TransactionalOperator transactionalOperator) {
         this.paymentIntentRepository = paymentIntentRepository;
         this.paymentAttemptRepository = paymentAttemptRepository;
         this.refundRepository = refundRepository;
@@ -80,6 +83,8 @@ public class PaymentServiceImpl implements PaymentService {
         this.mandateService = mandateService;
         this.paymentMetrics = paymentMetrics;
         this.routingDecisionLogRepository = routingDecisionLogRepository;
+        this.transactionalOperator = transactionalOperator;
+        log.info("TransactionalOperator injected for reactive transaction management");
     }
 
     /**
@@ -109,8 +114,8 @@ public class PaymentServiceImpl implements PaymentService {
         }
         
         // Generate payment ID and create entity (avoiding Mono.fromCallable to preserve transaction context)
-        PaymentId paymentId = PaymentId.generate();
-        String clientSecret = generateClientSecretForPayment(paymentId.getValue());
+            PaymentId paymentId = PaymentId.generate();
+                String clientSecret = generateClientSecretForPayment(paymentId.getValue());
         
         // Prepare metadata - include paymentMethod if provided
         Map<String, Object> metadata = request.getMetadata() != null 
@@ -121,64 +126,99 @@ public class PaymentServiceImpl implements PaymentService {
         if (request.getPaymentMethod() != null) {
             metadata.put("payment_method", request.getPaymentMethod().name());
         }
-        
-        // Create payment intent entity
+                
+                // Create payment intent entity
         PaymentIntentEntity entity = PaymentIntentEntity.builder()
-            .id(UUID.randomUUID().toString())
-            .paymentId(paymentId.getValue())
-            .merchantId(request.getMerchantId())
-            .status(PaymentStatus.REQUIRES_CONFIRMATION.name())
-            .amount(convertToMinorUnits(request.getAmount()))
-            .currency(request.getAmount().getCurrencyCode())
-            .amountCaptured(0L)
-            .customerId(request.getCustomerId())
-            .description(request.getDescription())
-            .returnUrl(request.getReturnUrl())
+                    .id(UUID.randomUUID().toString())
+                    .paymentId(paymentId.getValue())
+                    .merchantId(request.getMerchantId())
+                    .status(PaymentStatus.REQUIRES_CONFIRMATION.name())
+                    .amount(convertToMinorUnits(request.getAmount()))
+                    .currency(request.getAmount().getCurrencyCode())
+                    .amountCaptured(0L)
+                    .customerId(request.getCustomerId())
+                    .description(request.getDescription())
+                    .returnUrl(request.getReturnUrl())
             .metadata(metadata)
-            .attemptCount(0)
-            .createdAt(Instant.now())
-            .modifiedAt(Instant.now())
-            .offSession(request.getOffSession() != null ? request.getOffSession() : Boolean.FALSE)
-            .setupFutureUsage(request.getPaymentType() != null && "setup_mandate".equals(request.getPaymentType()) 
-                ? "off_session" : null)
-            .clientSecret(clientSecret)
-            .build();
+                    .attemptCount(0)
+                    .createdAt(Instant.now())
+                    .modifiedAt(Instant.now())
+                    .offSession(request.getOffSession() != null ? request.getOffSession() : Boolean.FALSE)
+                    .setupFutureUsage(request.getPaymentType() != null && "setup_mandate".equals(request.getPaymentType()) 
+                        ? "off_session" : null)
+                    .clientSecret(clientSecret)
+                    .build();
         
-        return Mono.just(entity)
-        .flatMap(entityToSave -> {
-            log.info("Saving payment intent entity: paymentId={}, merchantId={}", 
-                entityToSave.getPaymentId(), entityToSave.getMerchantId());
-            return paymentIntentRepository.save(entityToSave)
-                .doOnNext(saved -> {
-                    log.info("Payment intent saved successfully: paymentId={}, id={}", 
-                        saved.getPaymentId(), saved.getId());
-                })
-                .doOnError(error -> {
-                    log.error("Error saving payment intent: paymentId={}, error={}", 
-                        entityToSave.getPaymentId(), error.getMessage(), error);
-                })
-                .doOnSuccess(saved -> {
-                    log.info("Save operation completed successfully: paymentId={}, id={}", 
-                        saved.getPaymentId(), saved.getId());
-                });
-        })
-        .map(saved -> {
-            log.info("Mapping saved payment intent to PaymentIntent: paymentId={}", saved.getPaymentId());
+        log.info("Saving payment intent entity: paymentId={}, merchantId={}", 
+            entity.getPaymentId(), entity.getMerchantId());
+        
+        // Build the entire reactive chain
+        Mono<Result<PaymentIntent, PaymentError>> paymentOperation = paymentIntentRepository.save(entity)
+            .doOnNext(saved -> {
+                log.info("Payment intent saved successfully: paymentId={}, id={}", 
+                    saved.getPaymentId(), saved.getId());
+            })
+            .doOnError(error -> {
+                log.error("Error saving payment intent: paymentId={}, error={}", 
+                    entity.getPaymentId(), error.getMessage(), error);
+            })
+            .doOnSuccess(saved -> {
+                log.info("Save operation completed successfully - transaction should be committed: paymentId={}, id={}", 
+                    saved.getPaymentId(), saved.getId());
+            })
+            .doOnTerminate(() -> {
+                log.info("Save reactive chain terminated for paymentId={}", entity.getPaymentId());
+            })
+            .flatMap(saved -> {
+                log.info("Mapping saved payment intent to PaymentIntent: paymentId={}", saved.getPaymentId());
+                try {
             PaymentIntent paymentIntent = paymentMapper.toPaymentIntent(saved);
             paymentMetrics.incrementPaymentCreated();
             paymentMetrics.recordPaymentProcessingTime(
                 System.currentTimeMillis() - startTime, 
                 java.util.concurrent.TimeUnit.MILLISECONDS
             );
-            return Result.<PaymentIntent, PaymentError>ok(paymentIntent);
+                    log.info("Payment mapping completed successfully: paymentId={}", saved.getPaymentId());
+                    return Mono.just(Result.<PaymentIntent, PaymentError>ok(paymentIntent));
+                } catch (Exception e) {
+                    log.error("Error mapping payment intent: paymentId={}, error={}", saved.getPaymentId(), e.getMessage(), e);
+                    // Don't return error here - let the transaction commit, but return error result
+                    return Mono.just(Result.<PaymentIntent, PaymentError>err(PaymentError.of(
+                        "PAYMENT_MAPPING_FAILED",
+                        "Failed to map payment intent: " + e.getMessage()
+                    )));
+                }
+            })
+            .doOnSuccess(result -> {
+                log.info("Payment creation reactive chain completed successfully: paymentId={}, resultOk={}", 
+                    entity.getPaymentId(), result.isOk());
+            })
+            .doOnTerminate(() -> {
+                log.info("Payment creation reactive chain terminated: paymentId={}", entity.getPaymentId());
         })
         .onErrorResume(error -> {
-            log.error("Error creating payment", error);
+                log.error("Error creating payment: paymentId={}, error={}", entity.getPaymentId(), error.getMessage(), error);
+                // This will cause transaction rollback, but return error result
             return Mono.just(Result.<PaymentIntent, PaymentError>err(PaymentError.of(
                 "PAYMENT_CREATE_FAILED",
                 "Failed to create payment: " + error.getMessage()
             )));
         });
+        
+        // Wrap the entire operation with TransactionalOperator to ensure transaction commits
+        // Use .as(transactionalOperator::transactional) which is the recommended approach for Mono
+        return paymentOperation
+            .as(transactionalOperator::transactional)
+            .doOnSubscribe(subscription -> {
+                log.info("Transaction started for paymentId={}", entity.getPaymentId());
+            })
+            .doOnSuccess(result -> {
+                log.info("Transaction committed successfully for paymentId={}, resultOk={}", 
+                    entity.getPaymentId(), result.isOk());
+            })
+            .doOnError(error -> {
+                log.error("Transaction failed for paymentId={}, error={}", entity.getPaymentId(), error.getMessage(), error);
+            });
     }
 
     @SuppressWarnings("null")

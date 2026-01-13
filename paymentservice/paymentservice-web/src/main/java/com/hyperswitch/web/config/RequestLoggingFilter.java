@@ -50,11 +50,12 @@ public class RequestLoggingFilter implements WebFilter {
         log.info("RequestLoggingFilter invoked - method={}, path={}, content-length={}", request.getMethod(), path, request.getHeaders().getContentLength());
         System.out.println("[STDOUT] RequestLoggingFilter invoked - method=" + request.getMethod() + " path=" + path + " content-length=" + request.getHeaders().getContentLength());
         
-        // Only log for payment creation endpoint
-        if ("/api/payments".equals(path) && "POST".equals(request.getMethod().name())) {
+        // Only log for payment endpoints that expect a request body (e.g., creation and 3DS resume)
+        if (path != null && path.startsWith("/api/payments") && "POST".equals(request.getMethod().name())) {
             if (EARLY_DEBUG) {
                 log.info("Early debug: entering RequestLoggingFilter body-capture branch");
-            }            return DataBufferUtils.join(request.getBody())
+            }
+            return DataBufferUtils.join(request.getBody())
                 .flatMap(dataBuffer -> {
                     try {
                         // Read all bytes - this consumes the original buffer
@@ -118,6 +119,8 @@ public class RequestLoggingFilter implements WebFilter {
                             mutatedExchange.getAttributes().put("directCreatePaymentRequest", cachedDirect);
                             log.info("Attached cached direct CreatePaymentRequest to mutated exchange attributes: merchantId={}, amount={}", cachedDirect.getMerchantId(), cachedDirect.getAmount());
                         }
+                        // Also attach the raw request body so handlers that expect raw JSON (like 3DS resume) can access it
+                        mutatedExchange.getAttributes().put("rawRequestBody", body);
                         log.info("Request mutated with cached body - Content-Type: {}, proceeding to decoder", 
                             decoratedRequest.getHeaders().getFirst("Content-Type"));
                         return chain.filter(mutatedExchange);

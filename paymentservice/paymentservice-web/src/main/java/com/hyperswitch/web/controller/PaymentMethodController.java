@@ -30,7 +30,7 @@ import reactor.core.publisher.Mono;
  * REST controller for payment method management
  */
 @RestController
-@RequestMapping("/api/payment_methods")
+@RequestMapping("/api")
 @Tag(name = "Payment Methods", description = "Payment method management operations including creation, retrieval, update, and network token status checks")
 public class PaymentMethodController {
 
@@ -38,14 +38,11 @@ public class PaymentMethodController {
 
     private PaymentMethodService paymentMethodService;
 
-    // Default constructor to allow bean creation even if dependencies are missing
-    public PaymentMethodController() {
-        log.warn("PaymentMethodController created without dependencies - services will be null");
-    }
-
-    @Autowired(required = false)
-    public void setPaymentMethodService(PaymentMethodService paymentMethodService) {
+    // Constructor injection for required dependencies
+    @Autowired
+    public PaymentMethodController(PaymentMethodService paymentMethodService) {
         this.paymentMethodService = paymentMethodService;
+        log.info("PaymentMethodController created with PaymentMethodService: {}", paymentMethodService != null ? "OK" : "NULL");
     }
 
     @PostConstruct
@@ -61,7 +58,6 @@ public class PaymentMethodController {
      * Create a new payment method
      * POST /api/payment_methods
      */
-    @PostMapping
     @Operation(
         summary = "Create a payment method",
         description = "Creates a new payment method for a customer. Supports various payment method types including cards, wallets, and bank accounts.",
@@ -103,11 +99,17 @@ public class PaymentMethodController {
             content = @Content(schema = @Schema(implementation = com.hyperswitch.common.dto.ErrorResponse.class))
         )
     })
+    @PostMapping("/payment_methods")
     public Mono<ResponseEntity<PaymentMethodResponse>> createPaymentMethod(
+            @RequestHeader(value = "X-Merchant-Id", required = false) String merchantIdHeader,
             @Parameter(description = "Payment method creation request", required = true)
             @RequestBody PaymentMethodRequest request) {
         if (paymentMethodService == null) {
             return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+        }
+        // Set merchantId from header if not already set in request body
+        if (merchantIdHeader != null && (request.getMerchantId() == null || request.getMerchantId().getValue() == null)) {
+            request.setMerchantId(com.hyperswitch.common.types.MerchantId.of(merchantIdHeader));
         }
         return paymentMethodService.createPaymentMethod(request)
             .map(result -> {
@@ -123,7 +125,7 @@ public class PaymentMethodController {
      * Get payment method by ID
      * GET /api/payment_methods/{id}
      */
-    @GetMapping("/{id}")
+    @GetMapping("/payment_methods/{id}")
     @Operation(summary = "Get payment method", description = "Retrieves a payment method by its ID")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Payment method found"),
@@ -151,19 +153,26 @@ public class PaymentMethodController {
      * GET /api/customers/{customerId}/payment_methods
      */
     @GetMapping("/customers/{customerId}/payment_methods")
-    public Mono<ResponseEntity<Flux<PaymentMethodResponse>>> listCustomerPaymentMethods(
+    public Flux<PaymentMethodResponse> listCustomerPaymentMethods(
             @PathVariable String customerId) {
         if (paymentMethodService == null) {
-            return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+            return Flux.error(new RuntimeException("PaymentMethodService not available"));
         }
         CustomerId customerIdObj = CustomerId.of(customerId);
         return paymentMethodService.listCustomerPaymentMethods(customerIdObj)
-            .map(result -> {
+            .flatMapMany(result -> {
                 if (result.isOk()) {
-                    return ResponseEntity.ok(result.unwrap());
+                    Flux<PaymentMethodResponse> responseFlux = result.unwrap();
+                    log.debug("Successfully retrieved payment methods for customer: {}", customerId);
+                    return responseFlux;
                 } else {
-                    throw new PaymentException(result.unwrapErr());
+                    log.error("Error retrieving payment methods for customer {}: {}", customerId, result.unwrapErr());
+                    return Flux.error(new PaymentException(result.unwrapErr()));
                 }
+            })
+            .onErrorResume(throwable -> {
+                log.error("Unexpected error in listCustomerPaymentMethods for customer {}: {}", customerId, throwable.getMessage(), throwable);
+                return Flux.error(new PaymentException(com.hyperswitch.common.errors.PaymentError.of("INTERNAL_ERROR", "Failed to retrieve payment methods")));
             });
     }
 
@@ -194,7 +203,7 @@ public class PaymentMethodController {
      * Delete payment method
      * DELETE /api/payment_methods/{id}
      */
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/payment_methods/{id}")
     public Mono<ResponseEntity<Void>> deletePaymentMethod(@PathVariable String id) {
         if (paymentMethodService == null) {
             return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
@@ -214,7 +223,7 @@ public class PaymentMethodController {
      * Get payment method by client secret
      * GET /api/payment_methods/client_secret?client_secret={clientSecret}
      */
-    @GetMapping("/client_secret")
+    @GetMapping("/payment_methods/client_secret")
     @Operation(
         summary = "Get payment method by client secret",
         description = "Retrieves a payment method using its client secret. Used for client-side payment method retrieval."
@@ -243,7 +252,7 @@ public class PaymentMethodController {
      * Update saved payment method
      * PUT /api/payment_methods/{id}/update-saved-payment-method
      */
-    @PutMapping("/{id}/update-saved-payment-method")
+    @PutMapping("/payment_methods/{id}/update-saved-payment-method")
     @Operation(
         summary = "Update saved payment method",
         description = "Updates an existing saved payment method. Can update payment method data, network transaction ID, and connector mandate details."
@@ -275,7 +284,7 @@ public class PaymentMethodController {
      * Check network token status
      * GET /api/payment_methods/{id}/check-network-token-status
      */
-    @GetMapping("/{id}/check-network-token-status")
+    @GetMapping("/payment_methods/{id}/check-network-token-status")
     @Operation(
         summary = "Check network token status",
         description = "Checks the network token status for a payment method. Returns whether the payment method has an active network token and its status."
@@ -309,7 +318,7 @@ public class PaymentMethodController {
      * Tokenize a card
      * POST /api/payment_methods/tokenize-card
      */
-    @PostMapping("/tokenize-card")
+    @PostMapping("/payment_methods/tokenize-card")
     @Operation(
         summary = "Tokenize a card",
         description = "Tokenizes a card and creates a payment method. Optionally enables network tokenization."
@@ -341,7 +350,7 @@ public class PaymentMethodController {
      * List payment methods
      * GET /api/payment_methods
      */
-    @GetMapping
+    @GetMapping("/payment_methods")
     @Operation(
         summary = "List payment methods",
         description = "Lists payment methods with optional filtering by merchant, customer, and payment method type"
@@ -373,7 +382,7 @@ public class PaymentMethodController {
      * Get payment method token
      * GET /api/payment_methods/{id}/get-token
      */
-    @GetMapping("/{id}/get-token")
+    @GetMapping("/payment_methods/{id}/get-token")
     @Operation(
         summary = "Get payment method token",
         description = "Retrieves token data for a payment method including network token if available"

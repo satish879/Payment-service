@@ -32,6 +32,7 @@ public class WebClientConfig {
     
     public WebClientConfig(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
+        log.info("WebClientConfig initialized with ObjectMapper: {}", objectMapper != null);
     }
     
     /**
@@ -49,10 +50,13 @@ public class WebClientConfig {
      * - Methods: jacksonJsonEncoder() and jacksonJsonDecoder() instead of jackson2JsonEncoder/Decoder()
      */
     @Bean
-    @ConditionalOnMissingBean(WebClient.Builder.class)
     @SuppressWarnings("deprecation")
     public WebClient.Builder webClientBuilder() {
         log.info("Creating WebClient.Builder bean with custom ObjectMapper");
+        if (objectMapper == null) {
+            log.warn("ObjectMapper is null, creating WebClient.Builder without custom codecs");
+            return WebClient.builder();
+        }
         return WebClient.builder()
             .codecs(configurer -> {
                 // Using deprecated methods until JacksonJsonEncoder/JacksonJsonDecoder are available

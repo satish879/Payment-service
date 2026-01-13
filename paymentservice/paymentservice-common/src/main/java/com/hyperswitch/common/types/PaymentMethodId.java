@@ -1,5 +1,8 @@
 package com.hyperswitch.common.types;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+
 import java.util.Objects;
 import java.util.UUID;
 
@@ -13,6 +16,7 @@ public final class PaymentMethodId {
         this.value = value;
     }
 
+    @JsonCreator
     public static PaymentMethodId of(String value) {
         return new PaymentMethodId(value);
     }
@@ -21,6 +25,7 @@ public final class PaymentMethodId {
         return new PaymentMethodId(UUID.randomUUID().toString());
     }
 
+    @JsonValue
     public String getValue() {
         return value;
     }

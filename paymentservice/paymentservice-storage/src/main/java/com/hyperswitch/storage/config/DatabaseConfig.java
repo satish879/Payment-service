@@ -8,6 +8,9 @@ import io.r2dbc.postgresql.PostgresqlConnectionConfiguration;
 import io.r2dbc.postgresql.PostgresqlConnectionFactory;
 import io.r2dbc.postgresql.codec.Json;
 import io.r2dbc.spi.ConnectionFactory;
+import org.springframework.r2dbc.connection.R2dbcTransactionManager;
+import org.springframework.transaction.ReactiveTransactionManager;
+import org.springframework.transaction.reactive.TransactionalOperator;
 import java.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,6 +82,26 @@ public class DatabaseConfig extends AbstractR2dbcConfiguration {
 
         log.info("Creating R2DBC ConnectionPool: initialSize=5, maxSize=20");
         return new ConnectionPool(poolConfig);
+    }
+
+    /**
+     * Configure R2DBC Transaction Manager for proper transaction handling.
+     * This ensures that transactions are properly committed when reactive chains complete.
+     */
+    @Bean
+    public ReactiveTransactionManager transactionManager(ConnectionFactory connectionFactory) {
+        log.info("Creating R2dbcTransactionManager for reactive transaction management");
+        return new R2dbcTransactionManager(connectionFactory);
+    }
+
+    /**
+     * Configure TransactionalOperator for reactive transaction management.
+     * This provides a convenient way to wrap reactive operations in transactions.
+     */
+    @Bean
+    public TransactionalOperator transactionalOperator(ReactiveTransactionManager transactionManager) {
+        log.info("Creating TransactionalOperator for reactive transaction management");
+        return TransactionalOperator.create(transactionManager);
     }
 
     /**

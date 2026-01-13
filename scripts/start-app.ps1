@@ -3,7 +3,9 @@ Write-Host "`n=== Starting Hyperswitch Payment Service ===" -ForegroundColor Cya
 
 # Get script directory
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$jarPath = Join-Path $scriptDir "paymentservice\paymentservice-web\target\paymentservice-web-1.0.0-SNAPSHOT.jar"
+# Repository root (parent of scripts directory)
+$repoRoot = Split-Path -Parent $scriptDir
+$jarPath = Join-Path $repoRoot "paymentservice\paymentservice-web\target\paymentservice-web-1.0.0-SNAPSHOT.jar"
 
 # Check if JAR exists
 if (-not (Test-Path $jarPath)) {
@@ -44,7 +46,7 @@ Write-Host "  Swagger: http://localhost:8080/swagger-ui.html" -ForegroundColor W
 Write-Host "`n" -ForegroundColor White
 
 # Change to the target directory and run in foreground
-$targetDir = Join-Path $scriptDir "paymentservice\paymentservice-web\target"
+$targetDir = Join-Path $repoRoot "paymentservice\paymentservice-web\target"
 Set-Location $targetDir
 java "-Dspring.classformat.ignore=true" -jar paymentservice-web-1.0.0-SNAPSHOT.jar
 

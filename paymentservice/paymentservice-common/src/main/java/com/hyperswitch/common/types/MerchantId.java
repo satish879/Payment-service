@@ -1,5 +1,7 @@
 package com.hyperswitch.common.types;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Objects;
 
 /**
@@ -12,10 +14,12 @@ public final class MerchantId {
         this.value = value;
     }
 
+    @JsonCreator
     public static MerchantId of(String value) {
         return new MerchantId(value);
     }
 
+    @JsonValue
     public String getValue() {
         return value;
     }

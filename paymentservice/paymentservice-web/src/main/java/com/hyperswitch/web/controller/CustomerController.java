@@ -86,10 +86,16 @@ public class CustomerController {
      * POST /api/customers
      */
     @PostMapping
-    public Mono<ResponseEntity<CustomerResponse>> createCustomer(@RequestBody CustomerRequest request) {
+    public Mono<ResponseEntity<CustomerResponse>> createCustomer(
+            @RequestHeader(value = "X-Merchant-Id", required = false) String merchantIdHeader,
+            @RequestBody CustomerRequest request) {
         Mono<ResponseEntity<CustomerResponse>> serviceCheck = checkServiceAvailable();
         if (serviceCheck != null) {
             return serviceCheck;
+        }
+        // Set merchantId from header if not already set in request body
+        if (merchantIdHeader != null && (request.getMerchantId() == null || request.getMerchantId().getValue() == null)) {
+            request.setMerchantId(MerchantId.of(merchantIdHeader));
         }
         return customerService.createCustomer(request)
             .map(result -> {
@@ -129,8 +135,13 @@ public class CustomerController {
     @PostMapping("/{id}")
     public Mono<ResponseEntity<CustomerResponse>> updateCustomer(
             @PathVariable String id,
+            @RequestHeader(value = "X-Merchant-Id", required = false) String merchantIdHeader,
             @RequestBody CustomerRequest request) {
         CustomerId customerId = CustomerId.of(id);
+        // Set merchantId from header if not already set in request body
+        if (merchantIdHeader != null && (request.getMerchantId() == null || request.getMerchantId().getValue() == null)) {
+            request.setMerchantId(MerchantId.of(merchantIdHeader));
+        }
         return customerService.updateCustomer(customerId, request)
             .map(result -> {
                 if (result.isOk()) {
@@ -164,10 +175,16 @@ public class CustomerController {
      */
     @GetMapping
     public Mono<ResponseEntity<Flux<CustomerResponse>>> listCustomers(
-            @RequestParam("merchant_id") String merchantIdParam,
+            @RequestHeader(value = "X-Merchant-Id", required = false) String merchantIdHeader,
+            @RequestParam(value = "merchant_id", required = false) String merchantIdParam,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        MerchantId merchantId = MerchantId.of(merchantIdParam);
+        // Prefer header over query parameter
+        String merchantIdStr = merchantIdHeader != null ? merchantIdHeader : merchantIdParam;
+        if (merchantIdStr == null) {
+            return Mono.just(ResponseEntity.badRequest().build());
+        }
+        MerchantId merchantId = MerchantId.of(merchantIdStr);
         Pageable pageable = PageRequest.of(page, size);
         
         return customerService.listCustomers(merchantId, pageable)

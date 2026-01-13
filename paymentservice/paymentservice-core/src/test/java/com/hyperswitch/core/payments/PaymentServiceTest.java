@@ -70,6 +70,9 @@ class PaymentServiceTest {
     @Mock
     private com.hyperswitch.core.analytics.AnalyticsService analyticsService;
     
+    @Mock
+    private org.springframework.transaction.reactive.TransactionalOperator transactionalOperator;
+    
     @InjectMocks
     private PaymentServiceImpl paymentService;
     
@@ -80,6 +83,10 @@ class PaymentServiceTest {
     void setUp() {
         testMerchantId = TestUtils.generateTestMerchantId();
         testPaymentId = TestUtils.generateTestPaymentId();
+        
+        // Setup TransactionalOperator to pass through the Mono
+        when(transactionalOperator.transactional(any(reactor.core.publisher.Mono.class)))
+            .thenAnswer(invocation -> invocation.getArgument(0));
     }
     
     @Test

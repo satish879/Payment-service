@@ -5,6 +5,7 @@ import com.hyperswitch.common.dto.UpdateRefundRequest;
 import com.hyperswitch.common.dto.RefundAggregatesResponse;
 import com.hyperswitch.common.types.PaymentId;
 import com.hyperswitch.core.payments.*;
+import com.hyperswitch.web.controller.PaymentException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -39,25 +40,20 @@ public class PaymentController {
     private com.hyperswitch.core.paymentmethods.PaymentMethodService paymentMethodService;
     private com.hyperswitch.core.revenuerecovery.RevenueRecoveryService revenueRecoveryService;
 
-    // Default constructor to allow bean creation even if dependencies are missing
-    public PaymentController() {
-        log.warn("PaymentController created without dependencies - services will be null");
-    }
-
-    @Autowired(required = false)
-    public void setPaymentService(PaymentService paymentService) {
+    // Constructor injection for required dependencies
+    @Autowired
+    public PaymentController(PaymentService paymentService, 
+                           com.hyperswitch.core.paymentmethods.PaymentMethodService paymentMethodService,
+                           @Autowired(required = false) com.hyperswitch.core.revenuerecovery.RevenueRecoveryService revenueRecoveryService) {
         this.paymentService = paymentService;
-    }
-
-    @Autowired(required = false)
-    public void setPaymentMethodService(com.hyperswitch.core.paymentmethods.PaymentMethodService paymentMethodService) {
         this.paymentMethodService = paymentMethodService;
+        this.revenueRecoveryService = revenueRecoveryService;
+        log.info("PaymentController created with PaymentService: {}, PaymentMethodService: {}, RevenueRecoveryService: {}", 
+                paymentService != null ? "OK" : "NULL", 
+                paymentMethodService != null ? "OK" : "NULL",
+                revenueRecoveryService != null ? "OK" : "NULL");
     }
 
-    @Autowired(required = false)
-    public void setRevenueRecoveryService(com.hyperswitch.core.revenuerecovery.RevenueRecoveryService revenueRecoveryService) {
-        this.revenueRecoveryService = revenueRecoveryService;
-    }
     
     @PostConstruct
     public void init() {
@@ -175,6 +171,7 @@ public class PaymentController {
         @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public Mono<ResponseEntity<PaymentIntent>> createPayment(
+            @RequestHeader(value = "X-Merchant-Id", required = false) String merchantIdHeader,
             @Parameter(
                 description = "Payment creation request", 
                 required = true,
@@ -195,6 +192,11 @@ public class PaymentController {
             return Mono.just(ResponseEntity.badRequest().build());
         }
         
+        // Set merchantId from header if not already set in request body (header takes precedence)
+        if (merchantIdHeader != null && (request.getMerchantId() == null || request.getMerchantId().isEmpty())) {
+            request.setMerchantId(merchantIdHeader);
+        }
+        
         log.info("Request merchantId: {}", request.getMerchantId());
         log.info("Request amount: {}", request.getAmount());
         log.info("Request amount is null: {}", request.getAmount() == null);
@@ -208,6 +210,10 @@ public class PaymentController {
                 log.warn("Found cached direct CreatePaymentRequest on exchange attributes - using it as fallback: merchantId={}, amount={}", cached.getMerchantId(), cached.getAmount());
                 System.out.println("[STDOUT] PaymentController: Found cached direct CreatePaymentRequest - merchantId=" + cached.getMerchantId() + " amount=" + cached.getAmount());
                 request = cached;
+                // Re-apply merchantId from header if available
+                if (merchantIdHeader != null && (request.getMerchantId() == null || request.getMerchantId().isEmpty())) {
+                    request.setMerchantId(merchantIdHeader);
+                }
             }
         }
         
@@ -331,7 +337,7 @@ public class PaymentController {
     })
     public Mono<ResponseEntity<PaymentIntent>> confirmPayment(
             @Parameter(description = "Payment ID", required = true)
-            @PathVariable String paymentId,
+            @PathVariable("paymentId") String paymentId,
             @Parameter(description = "Payment confirmation request", required = true)
             @RequestBody ConfirmPaymentRequest request) {
         return paymentService.confirmPayment(PaymentId.of(paymentId), request)
@@ -353,7 +359,7 @@ public class PaymentController {
     })
     public Mono<ResponseEntity<PaymentIntent>> capturePayment(
             @Parameter(description = "Payment ID", required = true)
-            @PathVariable String paymentId,
+            @PathVariable("paymentId") String paymentId,
             @Parameter(description = "Capture request with amount", required = true)
             @RequestBody CapturePaymentRequest request) {
         return paymentService.capturePayment(PaymentId.of(paymentId), request)
@@ -374,7 +380,7 @@ public class PaymentController {
     })
     public Mono<ResponseEntity<PaymentIntent>> getPayment(
             @Parameter(description = "Payment ID", required = true)
-            @PathVariable String paymentId) {
+            @PathVariable("paymentId") String paymentId) {
         return paymentService.getPayment(PaymentId.of(paymentId))
                 .map(result -> {
                     if (result.isOk()) {
@@ -394,7 +400,7 @@ public class PaymentController {
     })
     public Mono<ResponseEntity<Refund>> refundPayment(
             @Parameter(description = "Payment ID", required = true)
-            @PathVariable String paymentId,
+            @PathVariable("paymentId") String paymentId,
             @Parameter(description = "Refund request with amount", required = true)
             @RequestBody RefundRequest request) {
         return paymentService.refundPayment(PaymentId.of(paymentId), request)
@@ -413,7 +419,7 @@ public class PaymentController {
      */
     @PostMapping("/{paymentId}/3ds/challenge")
     public Mono<ResponseEntity<com.hyperswitch.common.dto.ThreeDSResponse>> handle3DSChallenge(
-            @PathVariable String paymentId,
+            @PathVariable("paymentId") String paymentId,
             @RequestBody com.hyperswitch.common.dto.ThreeDSRequest request) {
         return paymentService.handle3DSChallenge(PaymentId.of(paymentId), request)
                 .map(result -> {
@@ -431,8 +437,42 @@ public class PaymentController {
      */
     @PostMapping("/{paymentId}/3ds/resume")
     public Mono<ResponseEntity<PaymentIntent>> resumePaymentAfter3DS(
-            @PathVariable String paymentId,
-            @RequestParam String authenticationId) {
+            @PathVariable("paymentId") String paymentId,
+            @RequestBody(required = false) String requestBody,
+            org.springframework.web.server.ServerWebExchange exchange) {
+        log.debug("Resuming payment after 3DS: paymentId={}, requestBody={}", paymentId, requestBody);
+        // Fallback: if framework didn't bind the request body, try the raw body captured by RequestLoggingFilter
+        if (requestBody == null || requestBody.trim().isEmpty()) {
+            String raw = exchange.getAttribute("rawRequestBody");
+            if (raw != null && !raw.trim().isEmpty()) {
+                log.warn("RequestBody was empty; using rawRequestBody from exchange attributes");
+                requestBody = raw;
+            }
+        }
+
+        if (requestBody == null || requestBody.trim().isEmpty()) {
+            log.warn("Request body is null or empty for 3DS resume");
+            throw new PaymentException(com.hyperswitch.common.errors.PaymentError.of("INVALID_REQUEST", "Request body is required"));
+        }
+        
+        // Use ObjectMapper to parse the request
+        String authenticationId = null;
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            com.fasterxml.jackson.databind.JsonNode jsonNode = mapper.readTree(requestBody);
+            if (jsonNode.has("authenticationId")) {
+                authenticationId = jsonNode.get("authenticationId").asText();
+            }
+        } catch (Exception e) {
+            log.error("Error parsing JSON request body: {}", e.getMessage(), e);
+            throw new PaymentException(com.hyperswitch.common.errors.PaymentError.of("INVALID_REQUEST", "Invalid JSON format"));
+        }
+        
+        log.debug("Extracted authenticationId: {}", authenticationId);
+        if (authenticationId == null || authenticationId.isEmpty()) {
+            log.warn("authenticationId is null or empty");
+            throw new PaymentException(com.hyperswitch.common.errors.PaymentError.of("INVALID_REQUEST", "authenticationId is required"));
+        }
         return paymentService.resumePaymentAfter3DS(PaymentId.of(paymentId), authenticationId)
                 .map(result -> {
                     if (result.isOk()) {
@@ -449,8 +489,8 @@ public class PaymentController {
      */
     @PostMapping("/{paymentId}/3ds/callback")
     public Mono<ResponseEntity<PaymentIntent>> handle3DSCallback(
-            @PathVariable String paymentId,
-            @RequestParam(required = false) String authenticationId,
+            @PathVariable("paymentId") String paymentId,
+            @RequestParam(value = "authenticationId", required = false) String authenticationId,
             @RequestBody(required = false) java.util.Map<String, Object> callbackData) {
         // Extract authenticationId from callback data if not in query param
         String authId = authenticationId;
@@ -481,7 +521,7 @@ public class PaymentController {
      */
     @PostMapping("/{paymentId}/cancel")
     public Mono<ResponseEntity<PaymentIntent>> cancelPayment(
-            @PathVariable String paymentId,
+            @PathVariable("paymentId") String paymentId,
             @RequestBody(required = false) com.hyperswitch.common.dto.CancelPaymentRequest request) {
         if (request == null) {
             request = com.hyperswitch.common.dto.CancelPaymentRequest.builder().build();
@@ -502,7 +542,7 @@ public class PaymentController {
      */
     @PostMapping(value = "/{paymentId}", consumes = "application/json")
     public Mono<ResponseEntity<PaymentIntent>> updatePayment(
-            @PathVariable String paymentId,
+            @PathVariable("paymentId") String paymentId,
             @RequestBody com.hyperswitch.common.dto.UpdatePaymentRequest request) {
         return paymentService.updatePayment(PaymentId.of(paymentId), request)
                 .map(result -> {
@@ -520,7 +560,7 @@ public class PaymentController {
      */
     @GetMapping("/{paymentId}/client_secret")
     public Mono<ResponseEntity<java.util.Map<String, String>>> getClientSecret(
-            @PathVariable String paymentId) {
+            @PathVariable("paymentId") String paymentId) {
         return paymentService.getClientSecret(PaymentId.of(paymentId))
                 .map(result -> {
                     if (result.isOk()) {
@@ -539,7 +579,7 @@ public class PaymentController {
      */
     @PostMapping("/{paymentId}/incremental_authorization")
     public Mono<ResponseEntity<PaymentIntent>> incrementalAuthorization(
-            @PathVariable String paymentId,
+            @PathVariable("paymentId") String paymentId,
             @RequestBody com.hyperswitch.common.dto.IncrementalAuthorizationRequest request) {
         return paymentService.incrementalAuthorization(PaymentId.of(paymentId), request)
                 .map(result -> {
@@ -557,7 +597,7 @@ public class PaymentController {
      */
     @PostMapping("/{paymentId}/extend_authorization")
     public Mono<ResponseEntity<PaymentIntent>> extendAuthorization(
-            @PathVariable String paymentId) {
+            @PathVariable("paymentId") String paymentId) {
         return paymentService.extendAuthorization(PaymentId.of(paymentId))
                 .map(result -> {
                     if (result.isOk()) {
@@ -574,7 +614,7 @@ public class PaymentController {
      */
     @PostMapping("/{paymentId}/void")
     public Mono<ResponseEntity<PaymentIntent>> voidPayment(
-            @PathVariable String paymentId,
+            @PathVariable("paymentId") String paymentId,
             @RequestBody(required = false) com.hyperswitch.common.dto.VoidPaymentRequest request) {
         if (request == null) {
             request = new com.hyperswitch.common.dto.VoidPaymentRequest();
@@ -595,7 +635,7 @@ public class PaymentController {
      */
     @PostMapping("/{paymentId}/schedule_capture")
     public Mono<ResponseEntity<PaymentIntent>> scheduleCapture(
-            @PathVariable String paymentId,
+            @PathVariable("paymentId") String paymentId,
             @RequestBody com.hyperswitch.common.dto.ScheduleCaptureRequest request) {
         return paymentService.scheduleCapture(PaymentId.of(paymentId), request)
                 .map(result -> {
@@ -814,7 +854,7 @@ public class PaymentController {
     public Mono<ResponseEntity<reactor.core.publisher.Flux<com.hyperswitch.common.dto.PaymentMethodResponse>>> getPaymentMethodsForPayment(
             @RequestHeader("X-Merchant-Id") String merchantId,
             @Parameter(description = "Payment ID", required = true)
-            @PathVariable String paymentId) {
+            @PathVariable("paymentId") String paymentId) {
         return paymentMethodService.getPaymentMethodsForPayment(
                 PaymentId.of(paymentId), merchantId)
             .map(result -> {
@@ -940,7 +980,7 @@ public class PaymentController {
     })
     public Mono<ResponseEntity<Refund>> getRefund(
             @RequestHeader("X-Merchant-Id") String merchantId,
-            @PathVariable String id) {
+            @PathVariable("id") String id) {
         return paymentService.getRefund(id, merchantId)
             .map(result -> {
                 if (result.isOk()) {

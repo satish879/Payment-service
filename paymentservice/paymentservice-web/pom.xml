@@ -29,6 +29,10 @@
             <groupId>com.hyperswitch</groupId>
             <artifactId>paymentservice-storage</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.hyperswitch</groupId>
+            <artifactId>paymentservice-common</artifactId>
+        </dependency>
 
         <!-- Spring Boot WebFlux -->
         <dependency>

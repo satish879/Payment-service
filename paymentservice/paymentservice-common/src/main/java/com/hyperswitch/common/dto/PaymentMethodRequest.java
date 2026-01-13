@@ -8,65 +8,97 @@ import java.util.Map;
 /**
  * Request DTO for creating a payment method
  */
-public final class PaymentMethodRequest {
-    private final MerchantId merchantId;
-    private final CustomerId customerId;
-    private final String paymentMethodType;
-    private final String paymentMethodSubtype;
-    private final Map<String, Object> paymentMethodData;
-    private final String lockerId;
-    private final Map<String, Object> connectorMandateDetails;
-    private final String networkTransactionId;
-    private final String clientSecret;
+public class PaymentMethodRequest {
+    private MerchantId merchantId;
+    private CustomerId customerId;
+    private String paymentMethodType;
+    private String paymentMethodSubtype;
+    private Map<String, Object> paymentMethodData;
+    private String lockerId;
+    private Map<String, Object> connectorMandateDetails;
+    private String networkTransactionId;
+    private String clientSecret;
 
-    private PaymentMethodRequest(Builder builder) {
-        this.merchantId = builder.merchantId;
-        this.customerId = builder.customerId;
-        this.paymentMethodType = builder.paymentMethodType;
-        this.paymentMethodSubtype = builder.paymentMethodSubtype;
-        this.paymentMethodData = builder.paymentMethodData;
-        this.lockerId = builder.lockerId;
-        this.connectorMandateDetails = builder.connectorMandateDetails;
-        this.networkTransactionId = builder.networkTransactionId;
-        this.clientSecret = builder.clientSecret;
+    /**
+     * Default constructor for Jackson deserialization
+     */
+    public PaymentMethodRequest() {
+        // Empty constructor for Jackson deserialization
     }
 
     public MerchantId getMerchantId() {
         return merchantId;
     }
 
+    public void setMerchantId(MerchantId merchantId) {
+        this.merchantId = merchantId;
+    }
+
     public CustomerId getCustomerId() {
         return customerId;
+    }
+
+    public void setCustomerId(CustomerId customerId) {
+        this.customerId = customerId;
     }
 
     public String getPaymentMethodType() {
         return paymentMethodType;
     }
 
+    public void setPaymentMethodType(String paymentMethodType) {
+        this.paymentMethodType = paymentMethodType;
+    }
+
     public String getPaymentMethodSubtype() {
         return paymentMethodSubtype;
+    }
+
+    public void setPaymentMethodSubtype(String paymentMethodSubtype) {
+        this.paymentMethodSubtype = paymentMethodSubtype;
     }
 
     public Map<String, Object> getPaymentMethodData() {
         return paymentMethodData;
     }
 
+    public void setPaymentMethodData(Map<String, Object> paymentMethodData) {
+        this.paymentMethodData = paymentMethodData;
+    }
+
     public String getLockerId() {
         return lockerId;
+    }
+
+    public void setLockerId(String lockerId) {
+        this.lockerId = lockerId;
     }
 
     public Map<String, Object> getConnectorMandateDetails() {
         return connectorMandateDetails;
     }
 
+    public void setConnectorMandateDetails(Map<String, Object> connectorMandateDetails) {
+        this.connectorMandateDetails = connectorMandateDetails;
+    }
+
     public String getNetworkTransactionId() {
         return networkTransactionId;
+    }
+
+    public void setNetworkTransactionId(String networkTransactionId) {
+        this.networkTransactionId = networkTransactionId;
     }
 
     public String getClientSecret() {
         return clientSecret;
     }
 
+    public void setClientSecret(String clientSecret) {
+        this.clientSecret = clientSecret;
+    }
+
+    // Builder pattern for backward compatibility
     public static Builder builder() {
         return new Builder();
     }
@@ -128,8 +160,17 @@ public final class PaymentMethodRequest {
         }
 
         public PaymentMethodRequest build() {
-            return new PaymentMethodRequest(this);
+            PaymentMethodRequest request = new PaymentMethodRequest();
+            request.setMerchantId(this.merchantId);
+            request.setCustomerId(this.customerId);
+            request.setPaymentMethodType(this.paymentMethodType);
+            request.setPaymentMethodSubtype(this.paymentMethodSubtype);
+            request.setPaymentMethodData(this.paymentMethodData);
+            request.setLockerId(this.lockerId);
+            request.setConnectorMandateDetails(this.connectorMandateDetails);
+            request.setNetworkTransactionId(this.networkTransactionId);
+            request.setClientSecret(this.clientSecret);
+            return request;
         }
     }
 }
-

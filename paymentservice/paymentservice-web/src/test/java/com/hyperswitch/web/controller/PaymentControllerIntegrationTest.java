@@ -18,9 +18,13 @@ import com.hyperswitch.common.types.Amount;
 import com.hyperswitch.common.types.PaymentId;
 import com.hyperswitch.common.types.Result;
 import java.math.BigDecimal;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.TestPropertySource;
 import reactor.core.publisher.Mono;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+@TestPropertySource(properties = "spring.main.allow-bean-definition-overriding=true")
 public class PaymentControllerIntegrationTest {
 
     @Autowired
@@ -32,6 +36,7 @@ public class PaymentControllerIntegrationTest {
     @org.springframework.boot.test.context.TestConfiguration
     static class TestConfig {
         @org.springframework.context.annotation.Bean
+        @org.springframework.context.annotation.Primary
         public com.hyperswitch.core.payments.PaymentService paymentService() {
             return org.mockito.Mockito.mock(com.hyperswitch.core.payments.PaymentService.class);
         }

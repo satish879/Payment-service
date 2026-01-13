@@ -1,5 +1,7 @@
 package com.hyperswitch.common.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hyperswitch.common.types.MerchantId;
 
 import java.util.Map;
@@ -7,65 +9,108 @@ import java.util.Map;
 /**
  * Request DTO for creating or updating a customer
  */
-public final class CustomerRequest {
-    private final MerchantId merchantId;
-    private final String name;
-    private final String email;
-    private final String phone;
-    private final String phoneCountryCode;
-    private final String description;
-    private final Map<String, Object> metadata;
-    private final String addressId;
-    private final String defaultPaymentMethodId;
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class CustomerRequest {
+    private MerchantId merchantId;
+    private String name;
+    private String email;
+    private String phone;
+    private String phoneCountryCode;
+    private String description;
+    private Map<String, Object> metadata;
+    private String addressId;
+    private String defaultPaymentMethodId;
 
-    private CustomerRequest(Builder builder) {
-        this.merchantId = builder.merchantId;
-        this.name = builder.name;
-        this.email = builder.email;
-        this.phone = builder.phone;
-        this.phoneCountryCode = builder.phoneCountryCode;
-        this.description = builder.description;
-        this.metadata = builder.metadata;
-        this.addressId = builder.addressId;
-        this.defaultPaymentMethodId = builder.defaultPaymentMethodId;
+    /**
+     * Default constructor for Jackson deserialization
+     */
+    public CustomerRequest() {
+        // Empty constructor for Jackson deserialization
     }
 
+    @JsonProperty("merchantId")
     public MerchantId getMerchantId() {
         return merchantId;
     }
 
+    @JsonProperty("merchantId")
+    public void setMerchantId(MerchantId merchantId) {
+        this.merchantId = merchantId;
+    }
+
+    @JsonProperty("name")
     public String getName() {
         return name;
     }
 
+    @JsonProperty("name")
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @JsonProperty("email")
     public String getEmail() {
         return email;
     }
 
+    @JsonProperty("email")
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    @JsonProperty("phone")
     public String getPhone() {
         return phone;
+    }
+
+    @JsonProperty("phone")
+    public void setPhone(String phone) {
+        this.phone = phone;
     }
 
     public String getPhoneCountryCode() {
         return phoneCountryCode;
     }
 
+    public void setPhoneCountryCode(String phoneCountryCode) {
+        this.phoneCountryCode = phoneCountryCode;
+    }
+
     public String getDescription() {
         return description;
     }
 
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    @JsonProperty("metadata")
     public Map<String, Object> getMetadata() {
         return metadata;
+    }
+
+    @JsonProperty("metadata")
+    public void setMetadata(Map<String, Object> metadata) {
+        this.metadata = metadata;
     }
 
     public String getAddressId() {
         return addressId;
     }
 
+    public void setAddressId(String addressId) {
+        this.addressId = addressId;
+    }
+
     public String getDefaultPaymentMethodId() {
         return defaultPaymentMethodId;
     }
 
+    public void setDefaultPaymentMethodId(String defaultPaymentMethodId) {
+        this.defaultPaymentMethodId = defaultPaymentMethodId;
+    }
+
+    // Builder pattern for backward compatibility
     public static Builder builder() {
         return new Builder();
     }
@@ -127,8 +172,17 @@ public final class CustomerRequest {
         }
 
         public CustomerRequest build() {
-            return new CustomerRequest(this);
+            CustomerRequest request = new CustomerRequest();
+            request.setMerchantId(this.merchantId);
+            request.setName(this.name);
+            request.setEmail(this.email);
+            request.setPhone(this.phone);
+            request.setPhoneCountryCode(this.phoneCountryCode);
+            request.setDescription(this.description);
+            request.setMetadata(this.metadata);
+            request.setAddressId(this.addressId);
+            request.setDefaultPaymentMethodId(this.defaultPaymentMethodId);
+            return request;
         }
     }
 }
-

@@ -1,5 +1,7 @@
 package com.hyperswitch.common.types;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -13,6 +15,7 @@ public final class CustomerId {
         this.value = value;
     }
 
+    @JsonCreator
     public static CustomerId of(String value) {
         return new CustomerId(value);
     }
@@ -21,6 +24,7 @@ public final class CustomerId {
         return new CustomerId(UUID.randomUUID().toString());
     }
 
+    @JsonValue
     public String getValue() {
         return value;
     }

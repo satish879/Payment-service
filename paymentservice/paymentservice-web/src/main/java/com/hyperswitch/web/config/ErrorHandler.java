@@ -30,13 +30,39 @@ public class ErrorHandler {
             return Mono.empty();
         }
         PaymentError error = ex.getError();
-        return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        HttpStatus status = mapErrorCodeToHttpStatus(error.getCode());
+        return Mono.just(ResponseEntity.status(status)
             .body(Map.of(
                 "error", Map.of(
                     "code", error.getCode(),
                     "message", error.getMessage()
                 )
             )));
+    }
+
+    private HttpStatus mapErrorCodeToHttpStatus(String errorCode) {
+        if (errorCode == null) {
+            return HttpStatus.BAD_REQUEST;
+        }
+        // Map common error codes to HTTP status codes
+        switch (errorCode.toUpperCase()) {
+            case "PAYMENT_NOT_FOUND":
+            case "CUSTOMER_NOT_FOUND":
+            case "PAYMENT_METHOD_NOT_FOUND":
+            case "REFUND_NOT_FOUND":
+                return HttpStatus.NOT_FOUND;
+            case "UNAUTHORIZED":
+            case "FORBIDDEN":
+                return HttpStatus.FORBIDDEN;
+            case "INVALID_REQUEST":
+            case "VALIDATION_ERROR":
+                return HttpStatus.BAD_REQUEST;
+            case "INTERNAL_ERROR":
+            case "SERVER_ERROR":
+                return HttpStatus.INTERNAL_SERVER_ERROR;
+            default:
+                return HttpStatus.BAD_REQUEST;
+        }
     }
 
     @ExceptionHandler(DecodingException.class)
